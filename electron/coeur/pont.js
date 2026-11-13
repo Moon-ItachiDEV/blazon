@@ -1,5 +1,5 @@
 // Branche le vrai cœur sur la fenêtre : commandes par ipcMain.handle, événements par webContents.send.
-// L'exécutable n'embarque plus la maquette ni ses données factices : il parle toujours au vrai cœur.
+// L'exécutable n'embarque ni maquette ni données factices : il parle toujours au vrai cœur.
 'use strict';
 const path = require('node:path');
 const fs = require('node:fs');
@@ -14,8 +14,6 @@ const COMMANDES = new Set([
   'relancer_le_scan', 'analyser_un_chemin', 'ajouter_un_jeu_manuel', 'retirer_un_jeu_manuel', 'choisir_l_exe', 'lancer', 'ouvrir_le_dossier', 'action_steam',
   'ouvrir_un_lien', 'fiche_du_jeu', 'succes_du_jeu', 'amis', 'actualites_du_jeu', 'fil_d_actualites', 'profil', 'enregistrer_la_cle', 'supprimer_la_cle',
 ]);
-
-const modeDemo = () => false;
 
 function creerLeCoeur() {
   api.utiliserFetch((url, o) => net.fetch(url, o));
@@ -35,7 +33,11 @@ function creerLeCoeur() {
     },
     icone: async (p) => (await app.getFileIcon(p, { size: 'large' })).toDataURL(),
     raccourci: (p) => { try { return { cible: shell.readShortcutLink(p).target }; } catch { return null; } },
-    demarrerAvecWindows: (oui) => { try { app.setLoginItemSettings({ openAtLogin: oui }); } catch { /* hors Windows */ } },
+    // L'exe portable se décompresse dans un dossier temporaire à chaque lancement : c'est le fichier
+    // d'origine (PORTABLE_EXECUTABLE_FILE) que Windows doit rouvrir, pas cette copie effacée à la fermeture.
+    demarrerAvecWindows: (oui) => {
+      try { app.setLoginItemSettings({ openAtLogin: oui, path: process.env.PORTABLE_EXECUTABLE_FILE || process.execPath }); } catch { /* hors Windows */ }
+    },
   });
 
   ipcMain.handle('coeur', async (_e, nom, args) => {
@@ -48,7 +50,15 @@ function creerLeCoeur() {
       return { ok: false, erreur: appErr };
     }
   });
-  app.on('before-quit', () => { void coeur.arreter(); });
+  // Les réglages sont écrits avec quelques secondes de retard : on attend la dernière écriture avant de
+  // quitter, sinon un réglage changé juste avant de fermer serait perdu.
+  let ecrit = false;
+  app.on('before-quit', (e) => {
+    if (ecrit) return;
+    e.preventDefault();
+    ecrit = true;
+    void Promise.race([coeur.arreter(), new Promise((r) => setTimeout(r, 2000))]).finally(() => app.quit());
+  });
   return coeur;
 }
 
@@ -59,4 +69,4 @@ function brancher(coeur, fenetre, page) {
   fenetre.on('closed', arreter);
 }
 
-module.exports = { creerLeCoeur, brancher, modeDemo };
+module.exports = { creerLeCoeur, brancher };

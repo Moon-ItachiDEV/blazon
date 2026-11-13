@@ -7,8 +7,8 @@ import styles from './Frise.module.css';
 
 /**
  * Les dernières parties en barres, de la plus ancienne à la plus récente : la hauteur dit la durée.
- * Les barres poussent l'une après l'autre ; la plus longue et la plus récente portent leur durée,
- * les autres la montrent au survol. Une session en cours bat doucement.
+ * La plus longue et la plus récente portent leur durée, les autres la montrent au survol.
+ * Une session en cours est verte.
  */
 export function Frise({ sessions }: { sessions: Session[] }) {
   const { t, tp, langue } = useTexte();
@@ -37,7 +37,7 @@ export function Frise({ sessions }: { sessions: Session[] }) {
               className={styles.colonne}
               data-en-cours={session.fin === null ? '' : undefined}
               data-etiquetee={etiquetee ? '' : undefined}
-              style={{ '--part': Math.max(0.04, session.duree_s / max), '--rang': rang } as CSSProperties}
+              style={{ '--part': Math.max(0.04, session.duree_s / max) } as CSSProperties}
             >
               <span className={styles.bulle} aria-hidden="true">
                 {duree}

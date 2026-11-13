@@ -13,12 +13,12 @@ interface Proprietes {
   children?: ReactNode;
 }
 
-/** Un état dit en clair : une pastille colorée selon le ton, un titre, une phrase, puis la suite. */
+/** Un état dit en clair : une icône colorée selon le ton, un titre, une phrase, puis la suite. */
 export function BlocDEtat({ icone, ton, titre, texte, refDuTitre, children }: Proprietes) {
   return (
     <div className={`${styles.etat} ${styles[ton] ?? ''}`}>
-      <span className={styles.pastille}>
-        <Icone nom={icone} taille={22} />
+      <span className={styles.etatIcone}>
+        <Icone nom={icone} taille={18} />
       </span>
       <div className={styles.etatCorps}>
         <div>

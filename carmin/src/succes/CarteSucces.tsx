@@ -14,11 +14,7 @@ interface Proprietes {
   compacte?: boolean;
 }
 
-/**
- * Un succès en carte-médaille. Débloqué : médaille au liseré dégradé, pellicule holographique et éclat
- * qui suivent le pointeur (variables posées par `suiviDeListe('[data-carte-succes]')` sur la liste).
- * Verrouillé : médaille éteinte, icône en silhouette.
- */
+/** Un succès : son icône, son nom, sa description et son état. Verrouillé, il passe en retrait. */
 export function CarteSucces({ succes, reveler, compacte = false }: Proprietes) {
   const { t, langue } = useTexte();
   const cache = estCache(succes, reveler);
@@ -33,10 +29,9 @@ export function CarteSucces({ succes, reveler, compacte = false }: Proprietes) {
   if (succes.pct_mondial !== null) etat.push(t('succes.part_des_joueurs', { part: formaterPart(succes.pct_mondial, langue) }));
 
   return (
-    <li className={`${styles.carte} ${acquis ? styles.acquis : ''} ${compacte ? styles.compacte : ''}`} data-carte-succes="" data-rarete={niveau ?? undefined}>
-      {acquis && <span className={styles.holo} aria-hidden="true" />}
-      <Medaille taille={compacte ? 58 : 66} eteinte={!acquis} className={styles.medaille ?? ''}>
-        {cache ? <Icone nom="cadenas" taille={22} /> : <img src={acquis ? succes.icone : succes.icone_grise} alt="" width={56} height={56} loading="lazy" decoding="async" />}
+    <li className={`${styles.carte} ${acquis ? styles.acquis : ''} ${compacte ? styles.compacte : ''}`} data-rarete={niveau ?? undefined}>
+      <Medaille taille={48} eteinte={!acquis}>
+        {cache ? <Icone nom="cadenas" taille={20} /> : <img src={acquis ? succes.icone : succes.icone_grise} alt="" width={48} height={48} loading="lazy" decoding="async" />}
       </Medaille>
       <div className={styles.corps}>
         <div className={styles.nom}>{cache ? t('succes.secret') : succes.nom}</div>

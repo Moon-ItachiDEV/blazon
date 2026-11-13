@@ -16,15 +16,6 @@
   object-fit: cover;
 }
 
-.estompee {
-  opacity: 0.32;
-}
-
-/* Jeu non installé : l'image s'éteint sur un fond sombre, pas sur sa couleur dominante. */
-.jaquette:has(.estompee) {
-  background: var(--surface-1);
-}
-
 /* Jeu sans image (hors Steam, ou image indisponible) : on dessine la jaquette avec son titre. */
 .dessinee {
   position: absolute;
@@ -58,4 +49,15 @@
 .source {
   font-size: clamp(10px, 7.5cqi, 13px);
   line-height: 1.4;
+}
+
+/* Une très petite jaquette dessinée (listes) : l'initiale du titre suffit, sans la source. */
+@container (max-width: 64px) {
+  .source {
+    display: none;
+  }
+
+  .titre {
+    -webkit-line-clamp: 3;
+  }
 }

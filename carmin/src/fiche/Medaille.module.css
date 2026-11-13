@@ -1,75 +1,21 @@
 .medaille {
-  position: relative;
   flex: none;
   display: inline-grid;
   place-items: center;
-  color: var(--texte);
+  overflow: hidden;
+  border-radius: 22%;
+  background: rgb(255 255 255 / 0.06);
+  color: var(--texte-3);
 }
 
-.cadre {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-}
-
-.arret1 {
-  stop-color: var(--violet);
-}
-.arret2 {
-  stop-color: var(--accent);
-}
-.arret3 {
-  stop-color: var(--accent-2);
-}
-
-.fond {
-  fill: rgb(255 255 255 / 0.05);
-}
-
-.trait {
-  fill: none;
-  stroke-width: 1.6;
-  stroke-linejoin: round;
-}
-
-/* Une médaille éteinte (succès verrouillé) : liseré gris, contenu en silhouette. */
-.medaille[data-eteinte] .trait {
-  stroke: rgb(255 255 255 / 0.16);
-}
-
-.centre {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: 64%;
-  height: 64%;
-}
-
-/* Une image au centre est taillée en rond. */
-.centre > img {
+.medaille > img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 50%;
 }
 
-.medaille[data-eteinte] .centre > img {
-  filter: grayscale(1) brightness(0.75);
-  opacity: 0.4;
-}
-
-/* Sans image de succès (pas encore chargée, ou absente de l'aperçu) : un trophée fin au lieu d'un rond vide. */
-.centre:has(> img):not(:has(> img[src]:not([src="data:,"]))) {
-  background: currentColor;
-  opacity: 0.55;
-  width: 46%;
-  height: 46%;
-  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 4h8v5a4 4 0 0 1-8 0z'/%3E%3Cpath d='M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8.5 20h7M10 17h4'/%3E%3C/svg%3E") center / contain no-repeat;
-  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 4h8v5a4 4 0 0 1-8 0z'/%3E%3Cpath d='M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8.5 20h7M10 17h4'/%3E%3C/svg%3E") center / contain no-repeat;
-}
-.medaille:not([data-eteinte]) .centre:has(> img):not(:has(> img[src]:not([src="data:,"]))) {
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  opacity: 0.9;
+/* Un succès verrouillé : son icône en gris, en retrait. */
+.medaille[data-eteinte] > img {
+  filter: grayscale(1);
+  opacity: 0.45;
 }

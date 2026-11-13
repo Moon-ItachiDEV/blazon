@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { EtatApp, Parametres } from '../../contrat/types';
 import { Attente, Bouton } from '../composants/Bouton';
 import { Dialogue } from '../composants/Dialogue';
-import { ReglageOuiNon } from '../composants/Formulaire';
+import { LigneDeReglage, ReglageOuiNon } from '../composants/Formulaire';
 import { Icone } from '../composants/Icone';
 import { Carte, Section } from './Bloc';
 import { coeur } from '../coeur';
@@ -43,7 +43,7 @@ export function SectionDonnees({ etat, parametres }: { etat: EtatApp; parametres
                   {t(`parametres.source.${source}.perte`)}
                   {etat.sources_coupees.includes(source) && (
                     <span className={styles.enPause}>
-                      <Icone nom="horloge" taille={16} />
+                      <Icone nom="horloge" taille={14} />
                       <span>{t('parametres.source.en_pause')}</span>
                     </span>
                   )}
@@ -64,26 +64,18 @@ export function SectionDonnees({ etat, parametres }: { etat: EtatApp; parametres
             actif={parametres.reveler_les_succes_secrets}
             onChanger={(actif) => void modifierLesParametres((p) => ({ ...p, reveler_les_succes_secrets: actif }))}
           />
-          <ReglageOuiNon
-            nom={t('parametres.plantage')}
-            aide={parametres.rapports_de_plantage ? t('parametres.plantage.actif') : t('parametres.plantage.inactif')}
-            actif={parametres.rapports_de_plantage}
-            onChanger={(actif) => void modifierLesParametres((p) => ({ ...p, rapports_de_plantage: actif }))}
-          />
         </Carte>
       </Section>
 
       <Section titre={t('parametres.effacer.titre')}>
-        <div className={styles.zoneDanger}>
-          <div>
-            <p className={styles.sousTitre}>{t('parametres.effacer')}</p>
-            <p className={styles.discret}>{enJeu ? t('parametres.effacer.mode_jeu') : t('parametres.effacer.aide')}</p>
-          </div>
-          <Bouton variante="danger" aria-disabled={enJeu} onClick={() => enJeu || setConfirmer(true)}>
-            <Icone nom="poubelle" taille={18} />
-            {t('parametres.effacer')}
-          </Bouton>
-        </div>
+        <Carte>
+          <LigneDeReglage nom={t('parametres.effacer')} aide={enJeu ? t('parametres.effacer.mode_jeu') : t('parametres.effacer.aide')}>
+            <Bouton variante="danger" aria-disabled={enJeu} onClick={() => enJeu || setConfirmer(true)}>
+              <Icone nom="poubelle" taille={16} />
+              {t('parametres.effacer')}
+            </Bouton>
+          </LigneDeReglage>
+        </Carte>
       </Section>
 
       <Dialogue
@@ -94,7 +86,7 @@ export function SectionDonnees({ etat, parametres }: { etat: EtatApp; parametres
           <>
             <Bouton onClick={() => setConfirmer(false)}>{t('commun.annuler')}</Bouton>
             <Bouton variante="danger" aria-disabled={effacement} onClick={() => void (effacement || toutEffacer())}>
-              {effacement && <Attente />}
+              {effacement && <Attente taille={16} />}
               {effacement ? t('parametres.effacer.en_cours') : t('parametres.effacer')}
             </Bouton>
           </>

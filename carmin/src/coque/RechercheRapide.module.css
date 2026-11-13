@@ -4,30 +4,24 @@
   max-height: min(640px, calc(100vh - 2 * var(--e10)));
   margin: 12vh auto auto;
   padding: 0;
-  background: var(--surface-1);
-  border: 1px solid var(--trait-fort);
-  border-radius: var(--rayon-xl);
+  background: var(--surface-2);
+  border: 0;
+  border-radius: var(--rayon-l);
   color: var(--texte);
-  box-shadow: var(--ombre-fenetre);
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.08),
+    var(--ombre-fenetre);
   overflow: hidden;
 }
 
 .dialogue[open] {
   display: flex;
   flex-direction: column;
-  animation: ouvrir var(--duree) var(--courbe);
 }
 
+/* Ouverte au clavier des dizaines de fois par jour : elle apparaît d'un coup, sans animation. */
 .dialogue::backdrop {
   background: var(--rideau);
-  backdrop-filter: blur(6px);
-}
-
-@keyframes ouvrir {
-  from {
-    opacity: 0;
-    transform: translateY(-8px) scale(0.98);
-  }
 }
 
 .champ {
@@ -35,9 +29,9 @@
   display: flex;
   align-items: center;
   gap: var(--e3);
-  height: 64px;
+  height: 56px;
   padding: 0 var(--e5);
-  border-bottom: 1px solid var(--trait);
+  border-bottom: 1px solid var(--filet);
   color: var(--texte-3);
 }
 
@@ -51,7 +45,7 @@
   outline: none;
   box-shadow: none;
   color: var(--texte);
-  font-size: 18px;
+  font-size: 16px;
 }
 
 .champ input::placeholder {
@@ -64,13 +58,13 @@
 
 .touche {
   flex: none;
-  padding: 2px var(--e2);
-  background: var(--surface-3);
-  border-radius: var(--rayon-s);
+  padding: 2px 7px;
+  background: rgb(255 255 255 / 0.08);
+  border-radius: 6px;
   font-family: inherit;
-  font-size: 12px;
+  font-size: 11px;
   line-height: 18px;
-  color: var(--texte);
+  color: var(--texte-3);
 }
 
 .resultats {
@@ -85,8 +79,6 @@
   font-size: 12px;
   line-height: 16px;
   font-weight: 500;
-  letter-spacing: 0.08em;
-  text-transform: none;
   color: var(--texte-3);
 }
 
@@ -94,23 +86,24 @@
   display: flex;
   align-items: center;
   gap: var(--e3);
-  min-height: 64px;
-  padding: 6px var(--e3);
-  border-radius: var(--rayon-m);
+  min-height: 56px;
+  padding: 5px var(--e3);
+  border-radius: 10px;
   cursor: pointer;
 }
 
 .option[aria-selected='true'] {
-  background: var(--surface-3);
+  background: rgb(255 255 255 / 0.08);
 }
 
 .vignette {
   flex: none;
-  width: 34px;
-  border-radius: var(--rayon-s);
+  width: 30px;
+  border-radius: 5px;
 }
 
 .titre {
+  font-size: 14px;
   font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
@@ -118,7 +111,7 @@
 }
 
 .precision {
-  font-size: 13px;
+  font-size: 12px;
   line-height: 18px;
   color: var(--texte-3);
 }
@@ -139,7 +132,7 @@
 }
 
 .tout {
-  color: var(--accent);
+  color: var(--texte);
   font-weight: 500;
 }
 

@@ -3,24 +3,14 @@
   width: min(520px, calc(100vw - 2 * var(--e6)));
   max-height: calc(100vh - 2 * var(--e10));
   padding: 0;
-  background: var(--surface-1);
-  border: 1px solid var(--trait-fort);
+  background: var(--surface-2);
+  border: 0;
   border-radius: var(--rayon-xl);
   color: var(--texte);
-  box-shadow: var(--ombre-fenetre);
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.08),
+    var(--ombre-fenetre);
   overflow: hidden;
-}
-
-/* Repère d'accent en haut à gauche, le même que sous un titre de page. */
-.dialogue::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 96px;
-  height: 3px;
-  background: var(--accent);
-  clip-path: polygon(0 0, 100% 0, calc(100% - 4px) 100%, 0 100%);
 }
 
 .dialogue.large {
@@ -35,13 +25,12 @@
 
 .dialogue::backdrop {
   background: var(--rideau);
-  backdrop-filter: blur(6px);
 }
 
 @keyframes ouvrir {
   from {
     opacity: 0;
-    transform: translateY(8px) scale(0.98);
+    transform: scale(0.97);
   }
 }
 
@@ -58,10 +47,9 @@
   padding-top: 10px;
   font-family: var(--police-titre);
   font-stretch: var(--etirement-titre);
-  font-size: calc(20px * var(--echelle-titre));
-  line-height: calc(26px * var(--echelle-titre));
-  font-weight: 500;
-  text-transform: none;
+  font-size: calc(18px * var(--echelle-titre));
+  line-height: calc(24px * var(--echelle-titre));
+  font-weight: 600;
   text-wrap: balance;
 }
 
@@ -69,16 +57,19 @@
   flex: none;
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   background: transparent;
   border: 0;
-  border-radius: var(--rayon-m);
+  border-radius: 10px;
   color: var(--texte-3);
+  transition:
+    background-color var(--duree-courte) var(--courbe),
+    color var(--duree-courte) var(--courbe);
 }
 
 .fermer:hover {
-  background: var(--surface-3);
+  background: var(--survol);
   color: var(--texte);
 }
 
@@ -95,8 +86,7 @@
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: var(--e2);
-  padding: var(--e4) var(--e6) var(--e5);
-  border-top: 1px solid var(--trait);
+  padding: var(--e3) var(--e6) var(--e5);
 }
 
 /* Visionneuse de captures : l'image prend toute la place disponible. */
@@ -142,16 +132,17 @@
   grid-row: 2;
   display: grid;
   place-items: center;
-  width: 56px;
-  height: 56px;
-  background: var(--surface-2);
-  border: 1px solid var(--trait);
+  width: 48px;
+  height: 48px;
+  background: rgb(255 255 255 / 0.08);
+  border: 0;
   border-radius: 50%;
   color: var(--texte);
+  transition: background-color var(--duree-courte) var(--courbe);
 }
 
 .fleche:hover {
-  border-color: var(--texte);
+  background: rgb(255 255 255 / 0.16);
 }
 
 .flecheGauche svg {

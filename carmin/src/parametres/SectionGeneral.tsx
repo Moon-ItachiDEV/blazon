@@ -3,7 +3,6 @@ import { LigneDeReglage, ReglageOuiNon, Segments } from '../composants/Formulair
 import { Carte, Section } from './Bloc';
 import { modifierLesParametres } from '../etat/application';
 import { useTexte } from '../i18n/react';
-import styles from './Parametres.module.css';
 
 export function SectionGeneral({ parametres }: { parametres: Parametres }) {
   const { t } = useTexte();

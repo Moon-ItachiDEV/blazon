@@ -6,7 +6,6 @@ import { Champ } from '../composants/Formulaire';
 import { Icone } from '../composants/Icone';
 import { Jaquette } from '../composants/Jaquette';
 import { Page } from '../composants/Page';
-import { suiviDeListe } from '../composants/pointeur';
 import { coeur, erreur, estErreurApp } from '../coeur';
 import { cheminDuFichier } from '../coeur/electron';
 import { useApplication } from '../etat/application';
@@ -22,18 +21,15 @@ function enErreurApp(cause: unknown) {
 
 const ETAPES = ['fichier', 'titre', 'ajout'] as const;
 
-/** Les trois étapes de l'assistant, reliées par un trait qui se remplit au dégradé. */
-function Etapes({ etape, enCours }: { etape: 0 | 1 | 2; enCours: boolean }) {
+/** Les trois étapes de l'assistant : celle en cours en blanc, les faites cochées. */
+function Etapes({ etape }: { etape: 0 | 1 | 2 }) {
   const { t } = useTexte();
   return (
-    <ol className={styles.etapes} aria-label={t('ajout.etapes')} style={{ '--etape': etape } as CSSProperties} data-en-cours={enCours ? '' : undefined}>
-      <span className={styles.etapesTrait} aria-hidden="true">
-        <span />
-      </span>
+    <ol className={styles.etapes} aria-label={t('ajout.etapes')}>
       {ETAPES.map((cle, index) => (
         <li key={cle} className={styles.etape} data-etat={index < etape ? 'faite' : index === etape ? 'active' : 'a_venir'} aria-current={index === etape ? 'step' : undefined}>
           <span className={styles.etapeRond} aria-hidden="true">
-            {index < etape ? <Icone nom="coche" taille={18} /> : index + 1}
+            {index < etape ? <Icone nom="coche" taille={14} /> : index + 1}
           </span>
           <span className={styles.etapeNom}>{t(`ajout.etape.${cle}`)}</span>
         </li>
@@ -42,25 +38,6 @@ function Etapes({ etape, enCours }: { etape: 0 | 1 | 2; enCours: boolean }) {
   );
 }
 
-/** Le fichier du jeu, dessiné : une feuille qui flotte, dont l'extension change (.exe, .lnk, .url). */
-function Document() {
-  return (
-    <span className={styles.document} aria-hidden="true">
-      <span className={styles.feuille}>
-        <span className={styles.coin} />
-        {EXTENSIONS.map((extension, index) => (
-          <span key={extension} className={styles.feuilleExtension} style={{ '--i': index } as CSSProperties}>
-            .{extension}
-          </span>
-        ))}
-      </span>
-    </span>
-  );
-}
-
-/** Le reflet de la jaquette en construction suit le pointeur. */
-const suiviDeLaScene = suiviDeListe('[data-futur]');
-
 /** Les jaquettes qui encadrent le nouveau jeu sur l'étagère : des jeux récents de la bibliothèque. */
 function voisins(jeux: readonly JeuResume[] | null): JeuResume[] {
   if (jeux === null) return [];
@@ -68,60 +45,43 @@ function voisins(jeux: readonly JeuResume[] | null): JeuResume[] {
   return jeux
     .filter((jeu) => jeu.jaquette !== null && !jeu.masque && jeu.installe)
     .sort((a, b) => date(b).localeCompare(date(a)))
-    .slice(0, 4);
+    .slice(0, 2);
 }
 
 /**
- * L'aperçu de la future jaquette, qui se construit à mesure qu'on avance : un cadre vide, puis le titre
- * deviné du nom du fichier, la couleur tirée du titre, l'icône et la source une fois le fichier analysé.
- * Elle est posée sur une étagère, entre de vraies jaquettes de la bibliothèque.
+ * L'aperçu de la future jaquette, qui se remplit à mesure qu'on avance : un cadre vide, puis le titre
+ * deviné du nom du fichier et la couleur tirée du titre, l'icône et la source une fois le fichier analysé.
+ * Elle est posée entre deux vraies jaquettes de la bibliothèque. Rien n'y bouge tout seul.
  */
-function Scene({ titre, source, icone, etape, analyse }: { titre: string; source: Source | null; icone: string | null; etape: 0 | 1 | 2; analyse: boolean }) {
+function Scene({ titre, source, icone }: { titre: string; source: Source | null; icone: string | null }) {
   const { t } = useTexte();
   const jeux = useApplication((a) => a.jeux);
   const autour = useMemo(() => voisins(jeux), [jeux]);
   const couleur = couleurDeLApercu(titre);
-  const [gauche, droite] = [autour.slice(0, 2), autour.slice(2, 4)];
-  const vignette = (jeu: JeuResume) => (
-    <span key={jeu.id} className={styles.voisin}>
-      <Jaquette jeu={jeu} />
-    </span>
-  );
+  const vignette = (jeu: JeuResume | undefined) =>
+    jeu === undefined ? null : (
+      <span key={jeu.id} className={styles.voisin}>
+        <Jaquette jeu={jeu} />
+      </span>
+    );
   return (
-    <aside className={styles.scene} aria-label={t('ajout.apercu')} {...suiviDeLaScene}>
-      <p className={styles.sceneEtiquette}>
-        <span className={styles.scenePoint} aria-hidden="true" />
-        {t('ajout.apercu.etagere')}
-      </p>
+    <aside className={styles.scene} aria-label={t('ajout.apercu')}>
+      <p className={styles.sceneEtiquette}>{t('ajout.apercu.etagere')}</p>
       <div className={styles.etagere}>
-        {gauche.map(vignette)}
-        <div
-          className={styles.futur}
-          data-futur=""
-          data-titre={titre !== '' ? '' : undefined}
-          data-analyse={analyse ? '' : undefined}
-          data-etape={etape}
-          style={{ '--couleur-futur': couleur ?? undefined } as CSSProperties}
-          aria-hidden="true"
-        >
-          <span className={styles.futurCadre} />
-          <span className={styles.futurFond} />
-          <span className={styles.futurTexte}>
-            {icone !== null && <img key={icone} className={styles.futurIcone} src={icone} alt="" width={32} height={32} />}
-            {titre !== '' ? (
-              <span className={styles.futurTitre}>{titre}</span>
-            ) : (
-              <span className={styles.futurLignes}>
-                <span />
-                <span />
-                <span />
-              </span>
-            )}
-            <span className={styles.futurSource}>{source !== null ? t(`sources.${source}`) : ''}</span>
-          </span>
-          <span key={etape} className={styles.futurEclat} />
+        {vignette(autour[0])}
+        <div className={styles.futur} data-titre={titre !== '' ? '' : undefined} style={{ '--couleur-futur': couleur ?? undefined } as CSSProperties} aria-hidden="true">
+          {icone !== null && <img className={styles.futurIcone} src={icone} alt="" width={32} height={32} />}
+          {titre !== '' ? (
+            <span className={styles.futurTitre}>{titre}</span>
+          ) : (
+            <span className={styles.futurLignes}>
+              <span />
+              <span />
+            </span>
+          )}
+          <span className={styles.futurSource}>{source !== null ? t(`sources.${source}`) : ''}</span>
         </div>
-        {droite.map(vignette)}
+        {vignette(autour[1])}
       </div>
       <div className={styles.sceneLegende}>
         <p className={styles.sceneTitre}>{titre !== '' ? titre : t('ajout.apercu.vide')}</p>
@@ -236,16 +196,15 @@ export function EcranAjout() {
 
   return (
     <Page retour titre={t('bibliotheque.ajouter_un_jeu')} sousTitre={t('ajout.sous_titre')}>
-      <Etapes etape={etape} enCours={phase === 'analyse' || phase === 'ajout'} />
+      <Etapes etape={etape} />
 
       <div className={styles.atelier}>
         <div className={styles.colonne}>
           <div className={styles.depot} data-survol={survol} data-rempli={etat.saisie.trim() !== '' ? '' : undefined} data-compact={analyse !== null ? '' : undefined} onDragOver={survoler} onDragEnter={survoler} onDragLeave={quitter} onDrop={deposer}>
-            <svg className={styles.pointilles} aria-hidden="true">
-              <rect x="1" y="1" rx="27" ry="27" />
-            </svg>
             <div className={styles.depotEntete}>
-              <Document />
+              <span className={styles.depotIcone} aria-hidden="true">
+                <Icone nom="dossier" taille={22} />
+              </span>
               <div>
                 <p className={styles.depotTitre}>{survol ? t('ajout.depot_actif') : t('ajout.depot')}</p>
                 <p className={styles.depotTexte}>{t('ajout.depot_texte')}</p>
@@ -284,8 +243,8 @@ export function EcranAjout() {
                 {t('ajout.types.titre')}
               </h2>
               <ul className={styles.types}>
-                {EXTENSIONS.map((extension, index) => (
-                  <li key={extension} className={styles.type} style={{ '--i': index } as CSSProperties}>
+                {EXTENSIONS.map((extension) => (
+                  <li key={extension} className={styles.type}>
                     <span className={styles.extension}>.{extension}</span>
                     <span>{t(`ajout.types.${extension}`)}</span>
                   </li>
@@ -305,7 +264,7 @@ export function EcranAjout() {
           )}
 
           {(phase === 'apercu' || phase === 'ajout') && analyse !== null && (
-            <section className={`${styles.section} ${styles.carte} ${styles.etapeTitre}`} aria-labelledby="ajout-apercu">
+            <section className={`${styles.section} ${styles.carte}`} aria-labelledby="ajout-apercu">
               <h2 id="ajout-apercu" ref={refDuTitre} tabIndex={-1} className={`titre-section ${styles.focusDeTitre}`}>
                 {t('ajout.apercu')}
               </h2>
@@ -362,7 +321,7 @@ export function EcranAjout() {
           )}
         </div>
 
-        <Scene titre={titreDeLApercu} source={analyse?.source ?? null} icone={analyse?.icone ?? null} etape={etape} analyse={phase === 'analyse'} />
+        <Scene titre={titreDeLApercu} source={analyse?.source ?? null} icone={analyse?.icone ?? null} />
       </div>
     </Page>
   );

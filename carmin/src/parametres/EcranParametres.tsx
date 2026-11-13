@@ -1,14 +1,11 @@
 import type { EtatApp, Parametres } from '../../contrat/types';
 import { Squelette } from '../composants/Etats';
-import { Icone, type NomDIcone } from '../composants/Icone';
-import { Sigle } from '../composants/Marque';
+import { Icone } from '../composants/Icone';
 import { Page } from '../composants/Page';
-import { suiviDeListe } from '../composants/pointeur';
 import { useApplication } from '../etat/application';
 import { useTexte } from '../i18n/react';
 import { Lien } from '../navigation';
-import type { SectionParametres } from '../navigation/routes';
-import { useIndicateur } from './indicateur';
+import { SECTIONS_PARAMETRES, type SectionParametres } from '../navigation/routes';
 import { explicationDesJeuxPossedes } from './logique';
 import { SectionAPropos } from './SectionAPropos';
 import { SectionBibliotheque } from './SectionBibliotheque';
@@ -16,16 +13,6 @@ import { SectionDonnees } from './SectionDonnees';
 import { SectionGeneral } from './SectionGeneral';
 import { SectionSteam } from './SectionSteam';
 import styles from './Parametres.module.css';
-
-const ICONES: Record<SectionParametres, NomDIcone> = {
-  general: 'reglages',
-  steam: 'cle',
-  bibliotheque: 'grille',
-  donnees: 'cadenas',
-  a_propos: 'info',
-};
-
-const ORDRE: SectionParametres[] = ['general', 'steam', 'bibliotheque', 'donnees', 'a_propos'];
 
 function Contenu({ section, etat, parametres }: { section: SectionParametres; etat: EtatApp; parametres: Parametres }) {
   switch (section) {
@@ -46,68 +33,41 @@ function Chargement() {
   const { t } = useTexte();
   return (
     <div role="status" aria-label={t('commun.chargement')}>
-      <Squelette hauteur="24px" largeur="180px" style={{ display: 'block', marginBottom: 14 }} />
-      <Squelette hauteur="200px" rayon="var(--rayon-l)" style={{ display: 'block', marginBottom: 40 }} />
-      <Squelette hauteur="24px" largeur="220px" style={{ display: 'block', marginBottom: 14 }} />
-      <Squelette hauteur="140px" rayon="var(--rayon-l)" style={{ display: 'block' }} />
+      <Squelette hauteur="20px" largeur="140px" style={{ display: 'block', marginBottom: 12 }} />
+      <Squelette hauteur="124px" rayon="var(--rayon-l)" style={{ display: 'block', marginBottom: 32 }} />
+      <Squelette hauteur="20px" largeur="160px" style={{ display: 'block', marginBottom: 12 }} />
+      <Squelette hauteur="124px" rayon="var(--rayon-l)" style={{ display: 'block' }} />
     </div>
   );
 }
 
-/** Un reflet suit le pointeur sur la carte de réglages survolée. */
-const suiviDesCartes = suiviDeListe('[data-carte]');
-
-/** Les paramètres : une navigation entre cinq sections, et chaque réglage s'applique sans bouton Enregistrer. */
+/**
+ * Les paramètres : cinq onglets sous le titre, puis une seule colonne de réglages. Chaque réglage
+ * s'applique tout de suite, sans bouton Enregistrer.
+ */
 export function EcranParametres({ section }: { section: SectionParametres }) {
   const { t } = useTexte();
   const etat = useApplication((a) => a.etat);
   const parametres = useApplication((a) => a.parametres);
-  // La clé refusée ou le profil privé privent le joueur de données : on le signale dans la navigation.
-  const liste = useIndicateur<HTMLUListElement>(section);
+  // La clé refusée ou le profil privé privent le joueur de données : on le signale sur l'onglet Steam.
   const steamACorriger = etat !== null && (etat.cle === 'refusee' || explicationDesJeuxPossedes(etat.jeux_possedes_erreur) === 'profil_prive');
 
   return (
     <Page titre={t('coque.parametres')}>
-      <div className={styles.cadre}>
-        <nav className={styles.navigation} aria-label={t('parametres.navigation')}>
-          <ul ref={liste} className={styles.sections}>
-            {/* La pastille de verre glisse jusqu'à la section ouverte. */}
-            <li className={styles.indicateur} aria-hidden="true" />
-            {ORDRE.map((cle) => (
-              <li key={cle}>
-                <Lien
-                  className={styles.lienSection}
-                  vers={{ ecran: 'parametres', section: cle }}
-                  aria-current={cle === section ? 'page' : undefined}
-                  data-actif={cle === section ? '' : undefined}
-                >
-                  <span className={styles.lienIcone}>
-                    <Icone nom={ICONES[cle]} taille={20} />
-                  </span>
-                  <span className={styles.lienTexte}>{t(`parametres.section.${cle}`)}</span>
-                  {cle === 'steam' && steamACorriger && (
-                    <span className={styles.marqueAlerte}>
-                      <Icone nom="alerte" taille={18} />
-                      <span className="hors-ecran">{t('parametres.a_corriger')}</span>
-                    </span>
-                  )}
-                </Lien>
-              </li>
-            ))}
-          </ul>
-          <p className={styles.signature}>
-            <Sigle className={styles.signatureSigle ?? ''} />
-            <span>
-              <span className={styles.signatureNom}>{t('app.nom')}</span>
-              {etat !== null && <span className={`${styles.signatureVersion} chiffres`}>{etat.version}</span>}
-            </span>
-          </p>
-        </nav>
-        {/* Changer de section rejoue l'entrée en cascade : la clé recrée le contenu. */}
-        <div key={section} className={`cascade ${styles.contenu}`} {...suiviDesCartes}>
-          {etat === null || parametres === null ? <Chargement /> : <Contenu section={section} etat={etat} parametres={parametres} />}
-        </div>
-      </div>
+      <nav className={styles.onglets} aria-label={t('parametres.navigation')}>
+        {SECTIONS_PARAMETRES.map((cle) => (
+          <Lien key={cle} className={styles.onglet} vers={{ ecran: 'parametres', section: cle }} aria-current={cle === section ? 'page' : undefined}>
+            {t(`parametres.section.${cle}`)}
+            {cle === 'steam' && steamACorriger && (
+              <span className={styles.marqueAlerte}>
+                <Icone nom="alerte" taille={14} />
+                <span className="hors-ecran">{t('parametres.a_corriger')}</span>
+              </span>
+            )}
+          </Lien>
+        ))}
+      </nav>
+      <div className={styles.contenu}>{etat === null || parametres === null ? <Chargement /> : <Contenu section={section} etat={etat} parametres={parametres} />}</div>
     </Page>
   );
 }

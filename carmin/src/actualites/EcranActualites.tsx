@@ -14,11 +14,10 @@ import { useReponse } from '../etat/ressource';
 import { formaterDateRelative } from '../formats';
 import { useTexte } from '../i18n/react';
 import { Lien } from '../navigation';
-import { suiviDeListe } from '../composants/pointeur';
 import { LecteurDActualite } from './Lecteur';
 import { choisirLaUne, compterParJeu, FILTRES_ACTUALITES, filtrerActualites, filtrerParJeu, regrouperParJour, type FiltreActualites } from './logique';
-import { CarteMagazine, formatDeCarte, RubanParJeu } from './Magazine';
-import { CoteDeLaUne, Une } from './Une';
+import { CarteMagazine, RubanParJeu } from './Magazine';
+import { Une } from './Une';
 import styles from './EcranActualites.module.css';
 
 const TAILLE_DE_PAGE = 20;
@@ -64,13 +63,10 @@ export function EcranActualites() {
   };
   const ruban = useMemo(() => compterParJeu(annonces ?? []).filter((n) => parId.has(n.id_jeu)), [annonces, parId]);
   const visibles = useMemo(() => filtrerActualites(filtrerParJeu(annonces ?? [], jeuChoisi), filtre), [annonces, filtre, jeuChoisi]);
-  // La une sort du fil : elle n'y apparaît pas deux fois. Les trois suivantes l'accompagnent sur le côté.
+  // La une sort du fil : elle n'y apparaît pas deux fois.
   const une = useMemo(() => choisirLaUne(visibles), [visibles]);
   const reste = useMemo(() => visibles.filter((a) => a !== une), [visibles, une]);
   const groupes = useMemo(() => regrouperParJour(reste), [reste]);
-  // Place de chaque annonce dans le fil entier : elle décide du format de sa carte (une grande de temps en temps).
-  const rangs = useMemo(() => new Map(groupes.flatMap((g) => g.annonces).map((a, i) => [a.id, i] as const)), [groupes]);
-  const suivi = useMemo(() => suiviDeListe('[data-carte]'), []);
 
   // Il y a une suite si la dernière page était pleine : une page courte est la fin du fil.
   const finDuFil = fil.donnees !== null && fil.donnees.length < limiteLue.current;
@@ -104,7 +100,7 @@ export function EcranActualites() {
     <Page titre={t('coque.actualites')} sousTitre={t('actualites.perimetre')}>
       {fil.vue === 'chargement' && annonces === null && (
         <div className={styles.squelettes} role="status" aria-label={t('commun.chargement')}>
-          <Squelette hauteur="440px" rayon="var(--rayon-xl)" />
+          <Squelette hauteur="360px" rayon="var(--rayon-xl)" />
           {Array.from({ length: 3 }, (_, i) => (
             <Squelette key={i} hauteur="104px" rayon="var(--rayon-l)" />
           ))}
@@ -144,7 +140,6 @@ export function EcranActualites() {
           {une !== undefined && (
             <div className={styles.tete}>
               <Une key={une.id} actualite={une} jeu={jeuDe(une.id_jeu)} onOuvrir={setOuverte} />
-              <CoteDeLaUne annonces={filtrerParJeu(annonces, jeuChoisi)} aussi={reste.slice(0, 3)} jeuDe={jeuDe} onOuvrir={setOuverte} />
             </div>
           )}
 
@@ -161,22 +156,20 @@ export function EcranActualites() {
             {jeuChoisi !== null && (
               <button type="button" className={styles.puce} onClick={() => setJeuChoisi(null)} aria-label={t('actualites.par_jeu.retirer')}>
                 {jeuDe(jeuChoisi)?.titre}
-                <Icone nom="fermer" taille={14} />
+                <Icone nom="fermer" taille={12} />
               </button>
             )}
           </div>
 
           {visibles.length === 0 && <p className={styles.vide}>{t('actualites.filtre_vide')}</p>}
           {/* Une seule grille pour tout le fil : pas de trou en fin de journée. La première carte de chaque jour porte son intitulé. */}
-          <ul className={styles.grille} {...suivi}>
-            {groupes.flatMap((groupe, numero) =>
+          <ul className={styles.grille}>
+            {groupes.flatMap((groupe) =>
               groupe.annonces.map((annonce, i) => (
                 <CarteMagazine
                   key={annonce.id}
                   actualite={annonce}
                   jeu={jeuDe(annonce.id_jeu)}
-                  format={formatDeCarte(annonce, rangs.get(annonce.id) ?? 1)}
-                  rang={Math.min(numero * 2 + i, 14)}
                   {...(i === 0 ? { jour: formaterDateRelative(groupe.date, langue, maintenant) } : {})}
                   onOuvrir={setOuverte}
                 />

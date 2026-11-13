@@ -9,10 +9,8 @@ import { Dialogue } from '../composants/Dialogue';
 import { couleurDeJeu } from '../composants/couleur';
 import { disponible } from '../artefact/images';
 import { aSignaler, classeActionDeNote, ErreurPleine, iconeDErreur, Message, Note, Squelette } from '../composants/Etats';
-import { Icone, type NomDIcone } from '../composants/Icone';
+import { Icone } from '../composants/Icone';
 import { Menu, type ElementDeMenu } from '../composants/Menu';
-import { NombreAnime } from '../composants/NombreAnime';
-import { suiviDeListe } from '../composants/pointeur';
 import { gabaritDeTitre } from '../composants/titre';
 import { coeur } from '../coeur';
 import { vautUnNouvelEssai } from '../coeur/erreurs';
@@ -44,10 +42,6 @@ import styles from './Fiche.module.css';
 /** Erreurs qui veulent dire « cette rubrique n'existe pas pour ce jeu » : on la retire sans bruit. */
 const SANS_OBJET = new Set(['jeu_non_steam', 'jeu_sans_succes']);
 
-/** Les médailles des succès suivent le pointeur (inclinaison et reflet), à la souris seulement. */
-const suiviDesMedailles = suiviDeListe('[data-medaille]');
-const suiviDesCartes = suiviDeListe('[data-carte-succes]');
-
 function BoutonRetour() {
   const { t } = useTexte();
   return (
@@ -58,7 +52,7 @@ function BoutonRetour() {
   );
 }
 
-/** Le titre de la page : le logo du jeu, sinon son nom écrit en grand. Il se dévoile derrière un masque, puis un reflet le traverse. */
+/** Le titre de la page : le logo du jeu, sinon son nom écrit en grand. */
 function TitreDeFiche({ titre, logo }: { titre: string; logo: string | null }) {
   const [logoCasse, setLogoCasse] = useState(false);
   const enImage = logo !== null && !logoCasse;
@@ -69,22 +63,12 @@ function TitreDeFiche({ titre, logo }: { titre: string; logo: string | null }) {
   );
 }
 
-/** Une pastille du bandeau de chiffres : une médaille hexagonale, la valeur, son libellé. */
-function Pastille({ icone, valeur, libelle, jauge, rang, facultative = false }: { icone: NomDIcone; valeur: ReactNode; libelle: string; jauge?: number; rang: number; facultative?: boolean }) {
+/** Un chiffre du jeu : la valeur, son libellé dessous. */
+function Chiffre({ valeur, libelle }: { valeur: ReactNode; libelle: string }) {
   return (
-    <div className={styles.pastille} style={{ '--rang': rang } as CSSProperties} data-facultative={facultative ? '' : undefined}>
-      <Medaille taille={50} className={styles.medaillePastille ?? ''}>
-        <Icone nom={icone} taille={20} />
-      </Medaille>
-      <div className={styles.pastilleTexte}>
-        <dt>{libelle}</dt>
-        <dd className="chiffres">{valeur}</dd>
-      </div>
-      {jauge !== undefined && (
-        <span className={styles.jaugePastille} aria-hidden="true">
-          <span style={{ transform: `scaleX(${Math.min(1, Math.max(0, jauge))})` }} />
-        </span>
-      )}
+    <div className={styles.chiffre}>
+      <dt>{libelle}</dt>
+      <dd className="chiffres">{valeur}</dd>
     </div>
   );
 }
@@ -106,11 +90,10 @@ function prochainSucces(succes: SuccesDuJeu | null, reveler: boolean): Succes | 
 }
 
 /**
- * La carte néon, à droite de l'affiche : l'information qui donne envie d'y retourner. Le prochain succès,
- * la dernière partie, le temps joué ces deux semaines, les amis qui y jouent. Un liseré au dégradé du
- * blason tourne lentement autour d'elle.
+ * L'encart, à droite de l'affiche : ce qui donne envie d'y retourner. Le prochain succès à portée,
+ * la dernière partie, le temps joué ces deux semaines, les amis qui y jouent.
  */
-function CarteNeon({ prochain, tousDebloques, derniere, minutes2sem, joueurs, id_jeu }: { prochain: Succes | null; tousDebloques: boolean; derniere: Session | undefined; minutes2sem: number | null; joueurs: Ami[]; id_jeu: number }) {
+function Encart({ prochain, tousDebloques, derniere, minutes2sem, joueurs, id_jeu }: { prochain: Succes | null; tousDebloques: boolean; derniere: Session | undefined; minutes2sem: number | null; joueurs: Ami[]; id_jeu: number }) {
   const { t, tp, langue } = useTexte();
   const maintenant = useMaintenant();
   const faits: { cle: string; nom: string; valeur: string }[] = [];
@@ -119,70 +102,64 @@ function CarteNeon({ prochain, tousDebloques, derniere, minutes2sem, joueurs, id
   if (prochain === null && !tousDebloques && faits.length === 0 && joueurs.length === 0) return null;
 
   return (
-    <aside className={styles.neon} aria-label={t('fiche.prochain_succes')}>
-      <span className={styles.neonLisere} aria-hidden="true" />
-      <div className={styles.neonCorps}>
-        {prochain !== null && (
-          <Lien className={styles.neonSucces} vers={{ ecran: 'succes', id_jeu }}>
-            <span className={styles.neonEtiquette}>
-              <Icone nom="trophee" taille={15} />
-              {t('fiche.prochain_succes')}
-            </span>
-            <span className={styles.neonSuccesLigne}>
-              {disponible(prochain.icone) ? (
-                <img src={prochain.icone} alt="" width={56} height={56} className={styles.neonIcone} />
-              ) : (
-                <span className={`${styles.neonIcone} ${styles.neonIconeVide}`} aria-hidden="true">
-                  <Icone nom="trophee" taille={24} />
-                </span>
-              )}
-              <span className={styles.neonSuccesTexte}>
-                <strong>{prochain.nom}</strong>
-                {prochain.description !== null && <span>{prochain.description}</span>}
-              </span>
-            </span>
-            {prochain.pct_mondial !== null && (
-              <span className={styles.neonPart}>
-                <span className={styles.neonJauge} aria-hidden="true">
-                  <span style={{ transform: `scaleX(${prochain.pct_mondial / 100})` }} />
-                </span>
-                {t('fiche.prochain_succes.part', { part: formaterPart(prochain.pct_mondial, langue) })}
+    <aside className={styles.encart} aria-label={t('fiche.prochain_succes')}>
+      {prochain !== null && (
+        <Lien className={styles.encartSucces} vers={{ ecran: 'succes', id_jeu }}>
+          <span className={styles.encartEtiquette}>{t('fiche.prochain_succes')}</span>
+          <span className={styles.encartLigne}>
+            {disponible(prochain.icone) ? (
+              <img src={prochain.icone} alt="" width={48} height={48} className={styles.encartIcone} />
+            ) : (
+              <span className={`${styles.encartIcone} ${styles.encartIconeVide}`} aria-hidden="true">
+                <Icone nom="trophee" taille={20} />
               </span>
             )}
-          </Lien>
-        )}
-        {prochain === null && tousDebloques && (
-          <p className={styles.neonComplet}>
-            <Icone nom="trophee" taille={22} />
-            {t('fiche.tous_debloques')}
-          </p>
-        )}
-        {faits.length > 0 && (
-          <dl className={styles.neonFaits}>
-            {faits.map((fait) => (
-              <div key={fait.cle}>
-                <dt>{fait.nom}</dt>
-                <dd>{fait.valeur}</dd>
-              </div>
-            ))}
-          </dl>
-        )}
-        {joueurs.length > 0 && (
-          <p className={styles.neonAmis}>
-            <span className={styles.pile} aria-hidden="true">
-              {joueurs.slice(0, 4).map((ami) => (
-                <Avatar key={ami.steamid} image={ami.avatar} pseudo={ami.pseudo} taille={30} />
-              ))}
+            <span className={styles.encartTexte}>
+              <strong>{prochain.nom}</strong>
+              {prochain.description !== null && <span>{prochain.description}</span>}
             </span>
-            {tp('fiche.amis_y_jouent', joueurs.length)}
-          </p>
-        )}
-      </div>
+          </span>
+          {prochain.pct_mondial !== null && (
+            <span className={styles.encartPart}>
+              <span className={styles.encartJauge} aria-hidden="true">
+                <span style={{ transform: `scaleX(${prochain.pct_mondial / 100})` }} />
+              </span>
+              {t('fiche.prochain_succes.part', { part: formaterPart(prochain.pct_mondial, langue) })}
+            </span>
+          )}
+        </Lien>
+      )}
+      {prochain === null && tousDebloques && (
+        <p className={styles.encartComplet}>
+          <Icone nom="trophee" taille={18} />
+          {t('fiche.tous_debloques')}
+        </p>
+      )}
+      {faits.length > 0 && (
+        <dl className={styles.encartFaits}>
+          {faits.map((fait) => (
+            <div key={fait.cle}>
+              <dt>{fait.nom}</dt>
+              <dd>{fait.valeur}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+      {joueurs.length > 0 && (
+        <p className={styles.encartAmis}>
+          <span className={styles.pile} aria-hidden="true">
+            {joueurs.slice(0, 4).map((ami) => (
+              <Avatar key={ami.steamid} image={ami.avatar} pseudo={ami.pseudo} taille={26} />
+            ))}
+          </span>
+          {tp('fiche.amis_y_jouent', joueurs.length)}
+        </p>
+      )}
     </aside>
   );
 }
 
-/** L'aperçu des succès sur la fiche : un anneau de progression, une rangée de médailles, quelques cartes. */
+/** L'aperçu des succès sur la fiche : un anneau de progression, une rangée d'icônes, quelques cartes. */
 function ApercuDesSucces({ succes, reveler, id_jeu }: { succes: SuccesDuJeu; reveler: boolean; id_jeu: number }) {
   const { t, tp, te, langue } = useTexte();
   const choisis = apercu(succes.liste, 10);
@@ -193,19 +170,11 @@ function ApercuDesSucces({ succes, reveler, id_jeu }: { succes: SuccesDuJeu; rev
         {part !== null && succes.debloques !== null && (
           <div className={styles.anneau} style={{ '--part': part } as CSSProperties}>
             <svg viewBox="0 0 120 120" aria-hidden="true">
-              <defs>
-                <linearGradient id="fiche-anneau" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0" className={styles.arret1} />
-                  <stop offset="1" className={styles.arret2} />
-                </linearGradient>
-              </defs>
-              <circle className={styles.anneauFond} cx="60" cy="60" r="52" />
-              {part > 0 && <circle className={styles.anneauPlein} cx="60" cy="60" r="52" pathLength="100" stroke="url(#fiche-anneau)" />}
+              <circle className={styles.anneauFond} cx="60" cy="60" r="54" />
+              {part > 0 && <circle className={styles.anneauPlein} cx="60" cy="60" r="54" pathLength="100" />}
             </svg>
             <span className={styles.anneauTexte}>
-              <strong className="chiffres">
-                <NombreAnime valeur={Math.round(part * 100)} format={(n) => formaterPourcentage(n, langue)} />
-              </strong>
+              <strong className="chiffres">{formaterPourcentage(Math.round(part * 100), langue)}</strong>
               <span className="chiffres">
                 {succes.debloques}/{succes.total}
               </span>
@@ -214,13 +183,13 @@ function ApercuDesSucces({ succes, reveler, id_jeu }: { succes: SuccesDuJeu; rev
         )}
         <div className={styles.medailles}>
           <p className={styles.medaillesTitre}>{t('fiche.medailles')}</p>
-          <ul className={styles.rangMedailles} {...suiviDesMedailles}>
-            {choisis.map((s, rang) => {
+          <ul className={styles.rangMedailles}>
+            {choisis.map((s) => {
               const cache = estCache(s, reveler);
               return (
-                <li key={s.api_name} data-medaille="" className={styles.medaille} style={{ '--rang': rang } as CSSProperties} title={cache ? t('succes.secret') : s.nom}>
-                  <Medaille taille={58} eteinte={s.debloque !== true}>
-                    {cache ? <Icone nom="cadenas" taille={20} /> : <img src={s.debloque === true ? s.icone : s.icone_grise} alt="" loading="lazy" decoding="async" />}
+                <li key={s.api_name} title={cache ? t('succes.secret') : s.nom}>
+                  <Medaille taille={44} eteinte={s.debloque !== true}>
+                    {cache ? <Icone nom="cadenas" taille={18} /> : <img src={s.debloque === true ? s.icone : s.icone_grise} alt="" loading="lazy" decoding="async" />}
                   </Medaille>
                   <span className="hors-ecran">{cache ? t('succes.secret') : s.nom}</span>
                 </li>
@@ -241,14 +210,14 @@ function ApercuDesSucces({ succes, reveler, id_jeu }: { succes: SuccesDuJeu; rev
           {t('fiche.progression_inconnue', { raison: te(succes.progression_erreur) })}
         </Note>
       )}
-      <ul className={`cascade ${styles.succes}`} {...suiviDesCartes}>
+      <ul className={styles.succes}>
         {apercu(succes.liste, 4).map((s) => (
           <CarteSucces key={s.api_name} succes={s} reveler={reveler} compacte />
         ))}
       </ul>
       <Lien className={styles.suite} vers={{ ecran: 'succes', id_jeu }}>
         {tp('fiche.voir_les_succes', succes.total)}
-        <Icone nom="chevron_droit" taille={18} />
+        <Icone nom="chevron_droit" taille={16} />
       </Lien>
     </>
   );
@@ -282,17 +251,10 @@ function FicheDuJeu({ detail }: { detail: JeuDetail }) {
   const ligne: string[] = [];
   const studio = magasin?.developpeurs[0];
   if (studio !== undefined) ligne.push(studio);
+  if (magasin?.acces_anticipe === true) ligne.push(t('fiche.acces_anticipe'));
   if (jeu.date_sortie !== null) ligne.push(formaterAnnee(jeu.date_sortie));
   ligne.push(jeu.installe ? t('jeu.installe') : t('jeu.non_installe'));
   ligne.push(liste.format(jeu.sources.map((s) => t(`sources.${s}`))));
-
-  // ── Genres en gélules, au-dessus du titre
-  const tags: string[] = [];
-  if (magasin?.acces_anticipe === true) tags.push(t('fiche.acces_anticipe'));
-  for (const id of jeu.tags) {
-    const nom = noms.get(id);
-    if (nom !== undefined && tags.length < 4) tags.push(nom);
-  }
 
   // ── Chiffres
   const derniere = detail.sessions_recentes.find((s) => s.fin !== null);
@@ -300,63 +262,44 @@ function FicheDuJeu({ detail }: { detail: JeuDetail }) {
   const prochain = prochainSucces(succes.donnees, reveler);
   const tousDebloques = succes.donnees !== null && succes.donnees.debloques !== null && succes.donnees.total > 0 && succes.donnees.debloques === succes.donnees.total;
 
-  const pastilles: ReactNode[] = [];
-  pastilles.push(
-    <Pastille
-      key="temps"
-      icone="horloge"
-      rang={0}
-      valeur={<NombreAnime valeur={jeu.temps.minutes_total} format={(minutes) => formaterTempsDeJeu(minutes, langue)} />}
-      libelle={jeu.temps.origine === 'steam' ? t('fiche.temps.steam') : t('fiche.temps.local')}
-    />,
-  );
+  const chiffres: ReactNode[] = [];
+  chiffres.push(<Chiffre key="temps" valeur={formaterTempsDeJeu(jeu.temps.minutes_total, langue)} libelle={jeu.temps.origine === 'steam' ? t('fiche.temps.steam') : t('fiche.temps.local')} />);
   if (jeu.temps.dernier_lancement !== null) {
-    pastilles.push(
-      <Pastille
+    chiffres.push(
+      <Chiffre
         key="derniere"
-        icone="manette"
-        rang={1}
         valeur={formaterDate(jeu.temps.dernier_lancement, langue, maintenant)}
         libelle={derniere === undefined ? t('fiche.derniere_partie') : t('fiche.derniere_partie_duree', { duree: formaterDureeDeSession(derniere.duree_s, langue) })}
       />,
     );
   }
   if (progression !== null && progression.total > 0) {
-    pastilles.push(
+    chiffres.push(
       progression.debloques === null ? (
-        <Pastille key="succes" icone="trophee" rang={2} valeur={<NombreAnime valeur={progression.total} format={(nombre) => formaterNombre(nombre, langue)} />} libelle={tp('fiche.succes_a_debloquer', progression.total)} />
+        <Chiffre key="succes" valeur={formaterNombre(progression.total, langue)} libelle={tp('fiche.succes_a_debloquer', progression.total)} />
       ) : (
-        <Pastille
+        <Chiffre
           key="succes"
-          icone="trophee"
-          rang={2}
-          jauge={progression.debloques / progression.total}
-          valeur={<NombreAnime valeur={progression.debloques} format={(nombre) => `${nombre}/${progression.total}`} />}
+          valeur={
+            <>
+              {formaterNombre(progression.debloques, langue)}
+              <small> / {formaterNombre(progression.total, langue)}</small>
+            </>
+          }
           libelle={t('fiche.succes_debloques', { part: formaterPourcentage((progression.debloques / progression.total) * 100, langue) })}
         />
       ),
     );
   }
   if (jeu.avis !== null && jeu.avis.score > 0) {
-    pastilles.push(
-      <Pastille
-        key="avis"
-        icone="etoile"
-        rang={3}
-        jauge={jeu.avis.pct_positifs / 100}
-        valeur={<NombreAnime valeur={jeu.avis.pct_positifs} format={(part) => formaterPourcentage(part, langue)} />}
-        libelle={t('fiche.avis', { nombre: formaterNombre(jeu.avis.nombre, langue) })}
-      />,
-    );
+    chiffres.push(<Chiffre key="avis" valeur={formaterPourcentage(jeu.avis.pct_positifs, langue)} libelle={t('fiche.avis', { nombre: formaterNombre(jeu.avis.nombre, langue) })} />);
   }
   if (magasin !== null && magasin.joueurs_en_ligne !== null) {
-    pastilles.push(
-      <Pastille key="joueurs" icone="amis" rang={4} facultative={pastilles.length >= 4} valeur={<NombreAnime valeur={magasin.joueurs_en_ligne} format={(n) => formaterNombre(n, langue)} />} libelle={t('fiche.chiffre.joueurs')} />,
-    );
+    chiffres.push(<Chiffre key="joueurs" valeur={formaterNombre(magasin.joueurs_en_ligne, langue)} libelle={t('fiche.chiffre.joueurs')} />);
   } else if (jeu.taille_octets !== null) {
-    pastilles.push(<Pastille key="taille" icone="telechargement" rang={4} facultative={pastilles.length >= 4} valeur={formaterTaille(jeu.taille_octets, langue)} libelle={t('fiche.chiffre.taille')} />);
+    chiffres.push(<Chiffre key="taille" valeur={formaterTaille(jeu.taille_octets, langue)} libelle={t('fiche.chiffre.taille')} />);
   } else {
-    pastilles.push(<Pastille key="ajoute" icone="plus" rang={4} facultative={pastilles.length >= 4} valeur={formaterAnnee(jeu.ajoute_le)} libelle={t('fiche.chiffre.ajoute')} />);
+    chiffres.push(<Chiffre key="ajoute" valeur={formaterAnnee(jeu.ajoute_le)} libelle={t('fiche.chiffre.ajoute')} />);
   }
 
   // ── Menu « autres actions »
@@ -405,20 +348,11 @@ function FicheDuJeu({ detail }: { detail: JeuDetail }) {
   const langueDuJoueur = magasin?.langues.find((l) => l.code === langue);
   const prise_en_charge = langueDuJoueur === undefined ? [] : (['interface', 'audio', 'sous_titres'] as const).filter((cle) => langueDuJoueur[cle]).map((cle) => t(`fiche.langue.${cle}`));
 
-  const neon = <CarteNeon prochain={prochain} tousDebloques={tousDebloques} derniere={derniere} minutes2sem={jeu.temps.minutes_2sem} joueurs={joueurs} id_jeu={id_jeu} />;
+  const encart = <Encart prochain={prochain} tousDebloques={tousDebloques} derniere={derniere} minutes2sem={jeu.temps.minutes_2sem} joueurs={joueurs} id_jeu={id_jeu} />;
 
   return (
     <div {...couleurDeJeu(jeu.couleur_dominante)} className={styles.fiche}>
-      <Affiche className={styles.affiche ?? ''} couleur={jeu.couleur_dominante} image={detail.hero} haut={<BoutonRetour />} idDuTitre="fiche-titre" cle={id_jeu} cote={neon}>
-        {tags.length > 0 ? (
-          <ul className={styles.gelules} aria-label={t('fiche.tags')}>
-            {tags.map((nom) => (
-              <li key={nom}>{nom}</li>
-            ))}
-          </ul>
-        ) : (
-          <span />
-        )}
+      <Affiche className={styles.affiche ?? ''} couleur={jeu.couleur_dominante} image={detail.hero} haut={<BoutonRetour />} idDuTitre="fiche-titre" cle={id_jeu} cote={encart}>
         <TitreDeFiche titre={jeu.titre} logo={detail.logo} />
         <LigneDAffiche morceaux={ligne} />
         <ActionsDAffiche>
@@ -442,19 +376,18 @@ function FicheDuJeu({ detail }: { detail: JeuDetail }) {
             carre
             aria-pressed={jeu.favori}
             aria-label={jeu.favori ? t('fiche.retirer_des_favoris') : t('fiche.ajouter_aux_favoris')}
-            style={jeu.favori ? { color: 'var(--accent)' } : undefined}
             onClick={() => void definirFavori(id_jeu, !jeu.favori)}
           >
-            <Icone nom={jeu.favori ? 'etoile_pleine' : 'etoile'} taille={22} />
+            <Icone nom={jeu.favori ? 'etoile_pleine' : 'etoile'} taille={20} />
           </Bouton>
-          <Menu classeDuBouton={classeBouton({ variante: 'voile', grand: true, carre: true })} nom={t('fiche.autres_actions')} alignement="droite" contenu={<Icone nom="autres" taille={22} />} elements={actions} />
+          <Menu classeDuBouton={classeBouton({ variante: 'voile', grand: true, carre: true })} nom={t('fiche.autres_actions')} alignement="droite" contenu={<Icone nom="autres" taille={20} />} elements={actions} />
         </ActionsDAffiche>
       </Affiche>
 
-      <dl className={styles.pastilles}>{pastilles}</dl>
+      <dl className={styles.chiffres}>{chiffres}</dl>
 
       <div className={styles.colonnes}>
-        <div className={`cascade ${styles.principale}`}>
+        <div className={styles.principale}>
           {/* ── Présentation */}
           <section className={styles.section} aria-labelledby="fiche-a-propos">
             <h2 id="fiche-a-propos" className="titre-section">
@@ -525,8 +458,8 @@ function FicheDuJeu({ detail }: { detail: JeuDetail }) {
               </div>
               {succes.vue === 'chargement' && (
                 <div className={styles.succes} style={{ marginTop: 0 }}>
-                  <Squelette hauteur="84px" rayon="var(--rayon-l)" />
-                  <Squelette hauteur="84px" rayon="var(--rayon-l)" />
+                  <Squelette hauteur="76px" rayon="var(--rayon-l)" />
+                  <Squelette hauteur="76px" rayon="var(--rayon-l)" />
                 </div>
               )}
               {succes.donnees === null && succes.erreur !== null && (
@@ -548,7 +481,7 @@ function FicheDuJeu({ detail }: { detail: JeuDetail }) {
           )}
         </div>
 
-        <aside className={`cascade ${styles.laterale}`}>
+        <aside className={styles.laterale}>
           {/* ── Sessions */}
           <section className={styles.section} aria-labelledby="fiche-sessions">
             <h2 id="fiche-sessions" className="titre-section">
@@ -556,7 +489,7 @@ function FicheDuJeu({ detail }: { detail: JeuDetail }) {
             </h2>
             {detail.sessions_recentes.length === 0 ? (
               <div className={styles.sansSession}>
-                <Icone nom="manette" taille={28} />
+                <Icone nom="manette" taille={20} />
                 <p>{t('fiche.aucune_session')}</p>
               </div>
             ) : (

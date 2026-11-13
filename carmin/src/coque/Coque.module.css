@@ -1,16 +1,20 @@
-/* La coque « Carmin » : barre latérale à libellés, page au centre, colonne des amis à droite. */
+/*
+ * La coque : barre latérale à libellés, page au centre, colonne des amis à droite.
+ * Rien ne brille ici : des aplats, deux filets, et le rouge pour le seul repère de l'écran ouvert.
+ */
 .evitement {
   position: fixed;
   top: var(--e2);
   left: var(--e2);
   z-index: 50;
   padding: var(--e3) var(--e4);
-  background: var(--degrade);
+  background: var(--texte);
   border: 0;
   border-radius: var(--rayon-m);
-  color: var(--sur-accent);
+  color: var(--fond);
   font-weight: 500;
   transform: translateY(-200%);
+  -webkit-app-region: no-drag;
 }
 
 .evitement:focus-visible {
@@ -18,8 +22,9 @@
 }
 
 /*
- * Trois colonnes : la barre latérale à libellés, la page, la colonne des amis. `--g` et `--d` sont les
- * largeurs des deux bords : la barre du haut, fixe, se cale entre eux.
+ * Trois colonnes : la barre latérale, la page, la colonne des amis. `--g` et `--d` sont les largeurs
+ * des deux bords : la barre du haut, fixe, se cale entre eux. Replier la colonne des amis change la
+ * grille d'un coup : animer une largeur ferait recalculer toute la page à chaque image.
  */
 .application {
   --g: var(--largeur-menu);
@@ -28,6 +33,10 @@
   grid-template-columns: var(--g) minmax(0, 1fr) var(--d);
   align-items: start;
   min-height: 100vh;
+}
+
+.application[data-colonne-repliee] {
+  --d: var(--largeur-rail);
 }
 
 /* ---------- La barre latérale ---------- */
@@ -39,70 +48,34 @@
   height: 100vh;
   display: flex;
   flex-direction: column;
-  gap: var(--e8);
-  padding: var(--e6) var(--e4) var(--e5);
+  gap: var(--e5);
+  padding: var(--e5) var(--e3) var(--e4);
   overflow: hidden auto;
   scrollbar-width: none;
-  isolation: isolate;
-  background: color-mix(in srgb, var(--fond) 94%, transparent);
+  /* Un filet à droite, qui s'éteint vers le haut. */
+  border-right: 1px solid transparent;
+  border-image: linear-gradient(180deg, transparent, var(--filet) 120px) 1;
   view-transition-name: laterale;
 }
 
-/* Le voile rouge-rose qui monte du bas (référence « Gameverse ») ; il respire, très lentement. */
-.laterale::before {
-  content: '';
-  position: absolute;
-  inset: 38% 0 0;
-  z-index: -1;
-  background: var(--voile-carmin);
-  opacity: 0.85;
-  transform-origin: bottom;
-  animation: respirerVoile calc(var(--duree-ambiance) / 2) ease-in-out infinite alternate;
-  animation-play-state: var(--lecture-ambiance);
-  pointer-events: none;
-}
-
-/* Un filet à droite, qui s'éteint vers le haut : la seule ligne de la coque. */
-.laterale::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 1px;
-  background: linear-gradient(180deg, transparent, var(--trait) 30%, color-mix(in srgb, var(--framboise) 30%, transparent));
-  pointer-events: none;
-}
-
-@keyframes respirerVoile {
-  from {
-    opacity: 0.6;
-    transform: scaleY(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: scaleY(1.05);
-  }
-}
-
 .marque {
+  align-self: flex-start;
   display: inline-flex;
   align-items: center;
-  gap: var(--e3);
-  padding: var(--e2) var(--e3);
-  --taille-sigle: 32px;
+  gap: 10px;
+  padding: 2px var(--e3);
+  --taille-sigle: 26px;
 }
 
 .nom {
   font-family: var(--police-titre);
-  font-size: 19px;
-  font-weight: 500;
-  letter-spacing: 0.06em;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
   color: var(--texte);
 }
 
 .menu {
-  position: relative;
   flex: 1 0 auto;
   display: flex;
   flex-direction: column;
@@ -110,187 +83,85 @@
 }
 
 .ecart {
-  flex: 1 0 var(--e6);
+  flex: 1 0 var(--e3);
 }
 
-.entree {
+.entree,
+.ajout {
   position: relative;
   display: flex;
   align-items: center;
-  gap: var(--e4);
-  min-height: var(--cible);
-  padding: 0 var(--e3) 0 var(--e4);
-  border-radius: var(--rayon-m);
+  gap: var(--e3);
+  min-height: 40px;
+  padding: 0 var(--e3);
+  border-radius: 10px;
   color: var(--texte-3);
-  font-size: 15px;
-  font-weight: 400;
-  letter-spacing: 0.015em;
-  transition: color var(--duree) var(--courbe);
+  font-size: 14px;
+  font-weight: 450;
+  letter-spacing: 0.01em;
+  transition:
+    background-color var(--duree-courte) var(--courbe),
+    color var(--duree-courte) var(--courbe);
 }
 
-.entreeIcone {
-  display: grid;
-  place-items: center;
-  transition:
-    transform var(--duree) var(--courbe-ressort),
-    color var(--duree) var(--courbe);
+.entree > svg,
+.ajout > svg {
+  flex: none;
 }
 
 .entreeNom {
   flex: 1;
-  transition: transform var(--duree) var(--courbe);
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
-.entree:hover {
+.entree:hover,
+.ajout:hover {
+  background: var(--survol);
   color: var(--texte);
 }
 
-.entree:hover .entreeIcone {
-  transform: scale(1.12) rotate(-4deg);
-}
-
-.entree:hover .entreeNom {
-  transform: translateX(3px);
-}
-
-.entree[aria-current='page'] {
+/* L'écran ouvert : une surface plus claire, un texte blanc, et un court repère rouge sur le bord gauche. */
+.entree[aria-current='page'],
+.ajout[aria-current='page'] {
+  background: var(--choisi);
   color: var(--texte);
   font-weight: 500;
 }
 
-.entree[aria-current='page'] .entreeIcone {
-  color: var(--accent);
-  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--ecarlate) 80%, transparent));
-}
-
-/* L'entrée allumée : une gélule sombre, un trait rouge qui luit à gauche ; elle glisse d'une entrée à l'autre. */
-.indicateur {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: var(--gelule-h, 0);
-  transform: translateY(var(--gelule-y, 0));
-  border-radius: var(--rayon-m);
-  background: linear-gradient(90deg, color-mix(in srgb, var(--ecarlate) 16%, transparent), rgb(255 255 255 / 0.03) 70%);
-  transition:
-    transform 520ms var(--courbe-ressort),
-    height 520ms var(--courbe-ressort),
-    opacity var(--duree) var(--courbe);
-}
-
-.indicateur::before {
+.entree[aria-current='page']::before {
   content: '';
   position: absolute;
   left: 0;
-  top: 12px;
-  bottom: 12px;
+  top: calc(50% - 8px);
   width: 3px;
-  border-radius: 3px;
+  height: 16px;
+  border-radius: 2px;
   background: var(--degrade);
-  box-shadow: 0 0 14px 2px color-mix(in srgb, var(--ecarlate) 70%, transparent);
 }
 
-.menu[data-sans-gelule] .indicateur {
-  opacity: 0;
-}
-
+/* Le nombre d'amis en jeu, à droite de l'entrée Amis. */
 .pastille {
-  position: relative;
-  min-width: 22px;
-  height: 22px;
-  padding: 0 7px;
+  flex: none;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
   display: inline-grid;
   place-items: center;
   border-radius: 999px;
-  background: var(--degrade);
-  color: var(--sur-accent);
+  background: rgb(255 255 255 / 0.08);
+  color: var(--texte-2);
   font-size: 12px;
   font-weight: 500;
-  box-shadow: 0 0 16px color-mix(in srgb, var(--ecarlate) 55%, transparent);
 }
 
-/* La carte de la collection, au bas de la barre : le dégradé carmin qui ondule, un halo qui tourne. */
-.carte {
-  position: relative;
-  isolation: isolate;
-  overflow: hidden;
+/* « Ajouter un jeu » : le seul bouton de la coque, posé au bas de la barre. */
+.ajout {
   flex: none;
-  display: flex;
-  flex-direction: column;
-  gap: var(--e2);
-  padding: var(--e5) var(--e4) var(--e4);
-  border-radius: var(--rayon-l);
-  background: var(--degrade-vedette);
-  background-size: 220% 100%;
-  animation: moirerCarte var(--duree-moire) ease-in-out infinite alternate;
-  animation-play-state: var(--lecture-ambiance);
-  box-shadow: 0 18px 40px -12px color-mix(in srgb, var(--ecarlate) 55%, transparent);
-}
-
-@keyframes moirerCarte {
-  from {
-    background-position: 0% 50%;
-  }
-  to {
-    background-position: 100% 50%;
-  }
-}
-
-.carteHalo {
-  position: absolute;
-  z-index: -1;
-  width: 180px;
-  height: 180px;
-  top: -70px;
-  right: -60px;
-  border-radius: 50%;
-  background: radial-gradient(circle, var(--halo-blanc), transparent 65%);
-  animation: tournerHalo calc(var(--duree-ambiance) / 2) linear infinite;
-  animation-play-state: var(--lecture-ambiance);
-  transform-origin: -10px 140px;
-}
-
-@keyframes tournerHalo {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.carteTitre {
-  font-family: var(--police-titre);
-  font-size: 18px;
-  line-height: 24px;
-  font-weight: 500;
-  color: var(--sur-accent);
-}
-
-.carteTexte {
-  font-size: 13px;
-  line-height: 20px;
-  color: rgb(255 255 255 / 0.82);
-}
-
-.carteBouton {
-  margin-top: var(--e2);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--e2);
-  min-height: 42px;
-  border-radius: var(--rayon-m);
-  background: var(--fond);
-  color: var(--texte);
-  font-size: 14px;
-  font-weight: 500;
-  transition:
-    transform var(--duree) var(--courbe-ressort),
-    background var(--duree-courte) var(--courbe);
-}
-
-.carteBouton:hover {
-  transform: translateY(-2px);
-  background: var(--surface-1);
+  background: var(--carte);
+  color: var(--texte-2);
 }
 
 /* ---------- La barre du haut (au-dessus de la page seulement) ---------- */
@@ -303,113 +174,61 @@
   z-index: 30;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: var(--e6);
   height: var(--hauteur-barre);
   padding: 0 var(--marge-page);
-  background: linear-gradient(180deg, rgb(0 0 0 / 0.5), transparent);
-  transition:
-    background var(--duree) var(--courbe),
-    box-shadow var(--duree) var(--courbe);
+  transition: background-color var(--duree) var(--courbe);
   view-transition-name: barre;
 }
 
+/* Dès que la page défile, la barre devient un aplat : la page passe dessous sans se lire au travers. */
 .barre[data-defile] {
-  background: color-mix(in srgb, var(--fond) 94%, transparent);
-  box-shadow: 0 1px 0 var(--trait);
+  background: color-mix(in srgb, var(--fond) 96%, transparent);
+  box-shadow: 0 1px 0 var(--filet);
 }
 
-/* La recherche : un champ sombre, sans bord, qui s'éclaire sous le pointeur. */
+/* La recherche : un champ sombre, lisible sur la page comme sur l'image d'une fiche, qui s'éclaire sous le pointeur. */
 .recherche {
-  flex: 0 1 400px;
+  flex: 0 1 360px;
   display: flex;
   align-items: center;
-  gap: var(--e3);
-  height: 46px;
-  padding: 0 var(--e2) 0 var(--e4);
+  gap: 10px;
+  height: 40px;
+  padding: 0 var(--e2) 0 14px;
   border: 0;
-  border-radius: var(--rayon-m);
-  background: rgb(255 255 255 / 0.06);
+  border-radius: 10px;
+  background: rgb(22 18 20 / 0.78);
   color: var(--texte-3);
   text-align: left;
   transition:
-    background var(--duree) var(--courbe),
-    color var(--duree) var(--courbe),
-    box-shadow var(--duree) var(--courbe);
+    background-color var(--duree-courte) var(--courbe),
+    color var(--duree-courte) var(--courbe);
 }
 
 .recherche:hover {
-  background: rgb(255 255 255 / 0.09);
+  background: rgb(32 27 29 / 0.9);
   color: var(--texte-2);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--framboise) 30%, transparent), 0 8px 30px -10px color-mix(in srgb, var(--ecarlate) 50%, transparent);
 }
 
 .rechercheTexte {
   flex: 1;
+  min-width: 0;
+  overflow: hidden;
   font-size: 14px;
-  letter-spacing: 0.02em;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .raccourci {
-  padding: 3px 8px;
-  border-radius: var(--rayon-s);
+  flex: none;
+  padding: 2px 7px;
+  border-radius: 6px;
   background: rgb(255 255 255 / 0.06);
   font-family: inherit;
   font-size: 11px;
-  letter-spacing: 0.06em;
+  line-height: 18px;
+  letter-spacing: 0.04em;
   color: var(--texte-3);
-}
-
-.outils {
-  display: flex;
-  align-items: center;
-  gap: var(--e5);
-}
-
-/* Les chiffres de la bibliothèque : une icône rouge, un nombre, rien d'autre. */
-.medailles {
-  display: flex;
-  align-items: center;
-  gap: var(--e5);
-  margin: 0;
-}
-
-.medaille {
-  display: flex;
-  align-items: center;
-  gap: var(--e2);
-}
-
-.medaille dd {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 400;
-  letter-spacing: 0.03em;
-  color: var(--texte-2);
-}
-
-.puceIcone {
-  display: grid;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--ecarlate) 14%, transparent);
-  color: var(--accent);
-  transition: transform var(--duree) var(--courbe-ressort);
-}
-
-.medaille:hover .puceIcone {
-  transform: scale(1.12) rotate(-8deg);
-}
-
-.horloge {
-  padding-left: var(--e5);
-  border-left: 1px solid var(--trait);
-  color: var(--texte);
-  font-size: 15px;
-  font-weight: 400;
-  letter-spacing: 0.05em;
 }
 
 /* ---------- La page ---------- */
@@ -422,12 +241,54 @@
   outline: none;
 }
 
+/*
+ * La languette qui replie la colonne des amis : une petite gélule posée à cheval sur sa bordure, à
+ * hauteur du profil (donc sous les boutons de Windows dans l'exécutable).
+ */
+.languette {
+  position: fixed;
+  z-index: 32;
+  top: calc(var(--haut-fenetre) + var(--e4));
+  right: var(--d);
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 1px var(--filet);
+  color: var(--texte-3);
+  transform: translateX(50%);
+  transition:
+    background-color var(--duree-courte) var(--courbe),
+    color var(--duree-courte) var(--courbe);
+}
+
+.languette:hover {
+  background: var(--surface-3);
+  color: var(--texte);
+}
+
+.application[data-colonne-repliee] .languette svg {
+  transform: rotate(180deg);
+}
+
 /* ---------- Fenêtres plus étroites ---------- */
 
 /* La colonne des amis s'efface d'abord ; la liste complète reste l'écran Amis. */
 @media (max-width: 1240px) {
-  .application {
+  .application,
+  .application[data-colonne-repliee] {
     --d: 0px;
+  }
+  .languette {
+    display: none;
+  }
+  /* Sans colonne à droite, les boutons de Windows sont au-dessus de la barre : elle leur laisse la place. */
+  .barre {
+    padding-right: calc(var(--marge-page) + env(titlebar-area-x, 0px) + 100vw - env(titlebar-area-width, 100vw));
   }
 }
 
@@ -438,23 +299,16 @@
   }
   .nom,
   .entreeNom,
-  .pastille,
-  .carte,
-  .medailles {
+  .pastille {
     display: none;
   }
-  .entree {
+  .entree,
+  .ajout {
     justify-content: center;
     padding: 0;
   }
   .marque {
-    justify-content: center;
-  }
-}
-
-@media (max-width: 760px) {
-  .horloge {
-    display: none;
+    align-self: center;
   }
 }
 
@@ -465,11 +319,12 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--e1) var(--e3);
-  min-height: 44px;
+  min-height: 40px;
   padding: 6px var(--marge-page);
-  background: var(--surface-2);
-  border-bottom: 1px solid var(--fond);
-  font-size: 14px;
+  background: var(--carte);
+  border-bottom: 1px solid var(--filet);
+  color: var(--texte-2);
+  font-size: 13px;
 }
 
 .bandeau > svg {
@@ -477,7 +332,7 @@
 }
 
 .bandeau.calme > svg {
-  color: var(--accent);
+  color: var(--texte-3);
 }
 
 .bandeauTexte {
@@ -485,21 +340,23 @@
 }
 
 .bandeauAction {
-  min-height: 32px;
+  min-height: 28px;
   padding: 0 var(--e3);
-  background: transparent;
-  border: 1px solid var(--trait-fort);
+  background: rgb(255 255 255 / 0.08);
+  border: 0;
   border-radius: var(--rayon-s);
+  color: var(--texte);
   font-weight: 500;
   display: inline-flex;
   align-items: center;
+  transition: background-color var(--duree-courte) var(--courbe);
 }
 
 .bandeauAction:hover {
-  border-color: var(--texte);
+  background: rgb(255 255 255 / 0.14);
 }
 
-/* Écran d'ouverture, le temps que le cœur réponde. */
+/* Écran d'ouverture, le temps que le cœur réponde : le sigle seul, qui bat doucement. */
 .ouverture {
   min-height: 100vh;
   display: grid;
@@ -507,181 +364,7 @@
   padding: var(--e8);
 }
 
-/* Le sigle seul bat : le décor, lui aussi enfant de l'écran d'ouverture, garde son propre mouvement. */
 .ouverture > span {
-  --taille-sigle: 56px;
+  --taille-sigle: 48px;
   animation: var(--lueur) var(--duree-lueur) ease-in-out infinite alternate;
-}
-
-/* Sur l'écran d'ajout, le bouton de la carte est l'entrée allumée. */
-.carteBouton[aria-current='page'] {
-  box-shadow:
-    0 0 0 2px var(--fond),
-    0 0 0 4px var(--ecarlate);
-}
-
-/* Avec le dock des récents, la barre latérale se resserre pour que la carte reste visible à 900 px. */
-.laterale {
-  gap: var(--e5);
-}
-
-.ecart {
-  flex: 1 0 var(--e3);
-}
-
-/* Sur une fenêtre basse, la carte ne garde que son bouton. */
-@media (max-height: 940px) {
-  .carteTexte {
-    display: none;
-  }
-}
-
-/*
- * La carte de la collection, comme l'entrée allumée du menu : une surface sombre, un léger dégradé
- * rouge qui part de la gauche, un trait rouge qui luit. Le rouge reste en touche, jamais en aplat.
- */
-.carte {
-  background: linear-gradient(110deg, color-mix(in srgb, var(--ecarlate) 14%, transparent), rgb(255 255 255 / 0.035) 72%);
-  background-size: auto;
-  animation: none;
-  box-shadow:
-    inset 0 0 0 1px rgb(255 255 255 / 0.06),
-    0 18px 40px -18px rgb(0 0 0 / 0.7);
-}
-
-.carte::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: var(--e5);
-  height: 24px;
-  width: 3px;
-  border-radius: 3px;
-  background: var(--degrade);
-  box-shadow: 0 0 14px 2px color-mix(in srgb, var(--ecarlate) 70%, transparent);
-}
-
-.carteHalo {
-  display: none;
-}
-
-.carteTitre {
-  color: var(--texte);
-}
-
-.carteTexte {
-  color: var(--texte-3);
-}
-
-.carteBouton {
-  background: rgb(255 255 255 / 0.06);
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08);
-  color: var(--texte);
-}
-
-.carteBouton svg {
-  color: var(--accent);
-  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--ecarlate) 70%, transparent));
-  transition: transform var(--duree) var(--courbe-ressort);
-}
-
-.carteBouton:hover {
-  background: linear-gradient(90deg, color-mix(in srgb, var(--ecarlate) 18%, transparent), rgb(255 255 255 / 0.05));
-}
-
-.carteBouton:hover svg {
-  transform: rotate(90deg) scale(1.1);
-}
-
-.carteBouton[aria-current='page'] {
-  background: linear-gradient(90deg, color-mix(in srgb, var(--ecarlate) 18%, transparent), rgb(255 255 255 / 0.05));
-  box-shadow:
-    inset 0 0 0 1px color-mix(in srgb, var(--ecarlate) 55%, transparent),
-    0 0 18px -4px color-mix(in srgb, var(--ecarlate) 60%, transparent);
-}
-
-/* La colonne des amis repliée : un rail de portraits, aussi large que le rail d'icônes. */
-.application {
-  transition: grid-template-columns 460ms var(--courbe);
-}
-
-.application[data-colonne-repliee] {
-  --d: var(--largeur-rail);
-}
-
-.barre {
-  transition:
-    right 460ms var(--courbe),
-    background var(--duree) var(--courbe);
-}
-
-@media (max-width: 1240px) {
-  .application[data-colonne-repliee] {
-    --d: 0px;
-  }
-}
-
-/* Sans la carte : le bouton seul, posé au bas de la barre. */
-.ajoutSeul {
-  flex: none;
-  margin-top: 0;
-  min-height: 46px;
-}
-
-/*
- * La languette qui replie la colonne des amis : une petite gélule de verre posée à cheval sur sa
- * bordure, à hauteur du profil. Elle suit la bordure quand la colonne se replie.
- */
-.languette {
-  position: fixed;
-  z-index: 32;
-  top: 31px;
-  right: var(--d);
-  display: grid;
-  place-items: center;
-  width: 20px;
-  height: 36px;
-  padding: 0;
-  border: 0;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--fond) 80%, rgb(255 255 255 / 0.1));
-  box-shadow:
-    inset 0 0 0 1px rgb(255 255 255 / 0.1),
-    0 6px 16px rgb(0 0 0 / 0.5);
-  color: var(--texte-3);
-  cursor: pointer;
-  transform: translateX(50%);
-  transition:
-    right 460ms var(--courbe),
-    top 460ms var(--courbe),
-    color var(--duree) var(--courbe),
-    box-shadow var(--duree) var(--courbe),
-    width var(--duree) var(--courbe-ressort);
-}
-
-.languette:hover {
-  width: 24px;
-  color: var(--accent);
-  box-shadow:
-    inset 0 0 0 1px color-mix(in srgb, var(--ecarlate) 55%, transparent),
-    0 0 18px -2px color-mix(in srgb, var(--ecarlate) 60%, transparent);
-}
-
-.languette svg {
-  transition: transform 460ms var(--courbe-ressort);
-}
-
-/* Colonne repliée : la languette descend sous le portrait du profil, pour ne jamais le masquer. */
-.application[data-colonne-repliee] .languette {
-  top: 100px;
-}
-
-.application[data-colonne-repliee] .languette svg {
-  transform: rotate(180deg);
-}
-
-@media (max-width: 1240px) {
-  .languette {
-    display: none;
-  }
 }

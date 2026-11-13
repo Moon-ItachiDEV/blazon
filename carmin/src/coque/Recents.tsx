@@ -1,4 +1,4 @@
-import { useMemo, type CSSProperties } from 'react';
+import { useMemo } from 'react';
 import { Icone } from '../composants/Icone';
 import { Jaquette } from '../composants/Jaquette';
 import { lancerLeJeu, useApplication } from '../etat/application';
@@ -12,9 +12,8 @@ import styles from './Recents.module.css';
 const NOMBRE = 4;
 
 /**
- * Le dock des derniers jeux, dans la barre latérale : une tuile arrondie par jeu, qui grossit sous la
- * main comme une icône de dock, son titre et quand il a été lancé. Le jeu ouvert porte un anneau
- * carmin ; au survol, un bouton rond le lance sans passer par la fiche.
+ * Les derniers jeux, dans la barre latérale : une petite tuile par jeu, son titre et quand il a été
+ * lancé. Le jeu ouvert est plus clair ; au survol, un bouton rond le lance sans passer par la fiche.
  */
 export function Recents() {
   const { t, langue } = useTexte();
@@ -32,8 +31,8 @@ export function Recents() {
         {t('carmin.recents')}
       </h2>
       <ul className={styles.liste}>
-        {recents.map((jeu, rang) => (
-          <li key={jeu.id} className={styles.ligne} style={{ '--rang': rang, '--couleur-jaquette': jeu.couleur_dominante ?? undefined } as CSSProperties} data-ouvert={jeu.id === ouvert ? '' : undefined}>
+        {recents.map((jeu) => (
+          <li key={jeu.id} className={styles.ligne} data-ouvert={jeu.id === ouvert ? '' : undefined}>
             <Lien className={styles.lien} vers={{ ecran: 'jeu', id_jeu: jeu.id }} aria-current={jeu.id === ouvert ? 'true' : undefined}>
               <span className={styles.tuile}>
                 <Jaquette jeu={jeu} className={styles.image ?? ''} />
@@ -46,7 +45,7 @@ export function Recents() {
               </span>
             </Lien>
             <button type="button" className={styles.jouer} disabled={occupe} aria-label={t('jeu.jouer_a', { titre: jeu.titre })} onClick={() => void lancerLeJeu(jeu.id)}>
-              <Icone nom="jouer" taille={14} />
+              <Icone nom="jouer" taille={12} />
             </button>
           </li>
         ))}

@@ -43,6 +43,25 @@ body {
   isolation: isolate;
 }
 
+/*
+ * Dans l'exécutable, la fenêtre n'a pas de barre de titre : on la déplace par cette bande invisible,
+ * haute comme les boutons de Windows (réduire, agrandir, fermer), qui restent ceux du système.
+ * Dans un navigateur, `titlebar-area-height` n'existe pas : la bande a une hauteur nulle.
+ * Ce qui est cliquable sous la bande porte `-webkit-app-region: no-drag` (classe `hors-poignee`).
+ */
+#poignee {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--haut-fenetre);
+  -webkit-app-region: drag;
+}
+
+.hors-poignee {
+  -webkit-app-region: no-drag;
+}
+
 h1,
 h2,
 h3,
@@ -126,7 +145,7 @@ button:disabled {
   white-space: nowrap;
 }
 
-/* Titre de section : moyen, en casse normale, précédé d'un petit point rouge qui luit. Épuré. */
+/* Titre de section : moyen, en casse normale, sans ornement. */
 .titre-section {
   display: flex;
   align-items: center;
@@ -139,85 +158,14 @@ button:disabled {
   letter-spacing: var(--serrage-titre);
 }
 
-.titre-section::before {
-  /* Épuré : plus de point rouge devant les titres de section. */
-  display: none;
-  content: '';
-  flex: none;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--degrade);
-  box-shadow: 0 0 12px 1px color-mix(in srgb, var(--ecarlate) 70%, transparent);
-}
-
-/* Petite étiquette en capitales au-dessus d'un titre, écrite dans le dégradé d'accent. */
+/* Petite étiquette au-dessus d'un titre : discrète, en casse normale. */
 .sur-titre {
   font-family: var(--police-texte);
   font-size: 12px;
   line-height: 16px;
   font-weight: 500;
   letter-spacing: var(--espacement-etiquette);
-  text-transform: none;
-  color: var(--accent);
-}
-
-@supports (background-clip: text) {
-  .sur-titre {
-    width: fit-content;
-    background: var(--degrade);
-    background-clip: text;
-    color: transparent;
-  }
-}
-
-/*
- * Cadre vitré : un rectangle arrondi au liseré lumineux, pour ce qui compte sur un écran.
- * Deux calques sous le contenu : le liseré, puis le fond un pixel plus petit. L'élément lui-même garde
- * son anneau de focus.
- *   --biseau-taille : rayon ; --biseau-fond, --biseau-trait : les deux couleurs ;
- *   --biseau-marque : si posée (par exemple `var(--degrade)`), remplace le liseré : un bloc vivant.
- * (Le nom vient du thème précédent, où ce cadre avait deux angles coupés.)
- */
-.biseau {
-  position: relative;
-  isolation: isolate;
-}
-
-.biseau::before,
-.biseau::after {
-  --b: var(--biseau-taille, var(--biseau));
-  content: '';
-  position: absolute;
-  z-index: -1;
-  border-radius: var(--b);
-  pointer-events: none;
-}
-
-.biseau::before {
-  inset: 0;
-  padding: 1px;
-  background: var(--biseau-marque, var(--biseau-trait, var(--lisere)));
-  /* Seul l'anneau d'un pixel reste visible : le fond de verre, translucide, ne doit pas le laisser voir. */
-  mask:
-    linear-gradient(black 0 0) content-box,
-    linear-gradient(black 0 0);
-  mask-composite: exclude;
-}
-
-.biseau::after {
-  inset: 1px;
-  border-radius: calc(var(--b) - 1px);
-  background: var(--biseau-fond, var(--panneau-fort));
-  /* Verre dépoli : le panneau laisse passer, floues, les couleurs de ce qui est derrière lui. */
-  backdrop-filter: var(--verre);
-}
-
-/* Le même verre, sans cadre, pour une carte ou un panneau simple. */
-.verre {
-  background: var(--fond-verre);
-  backdrop-filter: var(--verre);
-  box-shadow: var(--arete), inset 0 0 0 1px var(--trait);
+  color: var(--texte-3);
 }
 
 .chiffres {
@@ -273,24 +221,7 @@ h3 {
 @keyframes monter {
   from {
     opacity: 0;
-    transform: translateY(22px) scale(0.985);
-  }
-}
-
-/* Un dégradé d'accent qui glisse sur lui-même : à poser avec `background-size: 220% 100%`. */
-@keyframes moirer {
-  from {
-    background-position: 0% 50%;
-  }
-  to {
-    background-position: 100% 50%;
-  }
-}
-
-/* Une jauge se remplit en arrivant à l'écran. À poser sur la partie pleine, avec `transform-origin: left`. */
-@keyframes remplir {
-  from {
-    transform: scaleX(0);
+    transform: translateY(10px);
   }
 }
 
@@ -332,34 +263,6 @@ h3 {
   }
   to {
     opacity: 1;
-  }
-}
-
-/*
- * L'envol d'une jaquette vers l'affiche de la fiche (voir `coque/envol.ts`) : un peu plus long qu'un
- * changement d'écran, l'image garde ses proportions (recadrée, jamais déformée) pendant le voyage.
- */
-::view-transition-group(jaquette-envol) {
-  animation-duration: calc(var(--duree-longue) * 1.1);
-  animation-timing-function: cubic-bezier(0.3, 0, 0, 1);
-  z-index: 5;
-}
-
-::view-transition-old(jaquette-envol),
-::view-transition-new(jaquette-envol) {
-  height: 100%;
-  object-fit: cover;
-  overflow: clip;
-  border-radius: var(--rayon-xl);
-}
-
-::view-transition-old(jaquette-envol) {
-  animation: quitter-envol calc(var(--duree-longue) * 1.1) var(--courbe) both;
-}
-
-@keyframes quitter-envol {
-  to {
-    opacity: 0;
   }
 }
 

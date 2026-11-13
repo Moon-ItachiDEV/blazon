@@ -1,15 +1,20 @@
 {
   "name": "blazon-carmin",
-  "productName": "Blazon Carmin",
-  "version": "0.2.0",
-  "description": "Blazon Carmin, branché sur Steam",
+  "productName": "Blazon",
+  "version": "0.3.0",
+  "description": "Blazon, tous tes jeux dans un seul lanceur",
   "author": "Breezydev",
   "main": "main.js",
   "build": {
     "appId": "com.blazon.carmin",
-    "productName": "Blazon Carmin",
+    "productName": "Blazon",
+    "electronLanguages": [
+      "fr",
+      "en-US"
+    ],
     "files": [
       "main.js",
+      "icone.png",
       "coeur/**/*",
       "app/**/*"
     ],
@@ -28,7 +33,7 @@
       "signAndEditExecutable": false
     },
     "portable": {
-      "artifactName": "Blazon-Carmin.exe"
+      "artifactName": "Blazon.exe"
     },
     "directories": {
       "output": "sortie"
