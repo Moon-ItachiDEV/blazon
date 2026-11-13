@@ -1,0 +1,503 @@
+/* ───────── Barre d'outils ───────── */
+.outils {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e3) var(--e6);
+  margin-top: var(--e8);
+  padding: 0 var(--marge-page);
+}
+
+.groupe {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px var(--e5);
+}
+
+.puces {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e2);
+}
+
+.compteur {
+  font-weight: 500;
+  color: var(--texte-3);
+}
+
+[aria-pressed='true'] > .compteur {
+  color: inherit;
+}
+
+.triPrefixe {
+  color: var(--texte-3);
+  font-weight: 400;
+}
+
+.bascule {
+  display: flex;
+  background: var(--surface-1);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-m);
+}
+
+.bascule button {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 46px;
+  background: transparent;
+  border: 0;
+  border-radius: var(--rayon-m);
+  color: var(--texte);
+}
+
+.bascule button[aria-pressed='true'] {
+  background: var(--degrade);
+  color: var(--sur-accent);
+}
+
+.note {
+  margin: var(--e5) var(--marge-page) 0;
+}
+
+/* ───────── Grille ───────── */
+/* Le conteneur a la hauteur de toute la bibliothèque ; seules les cartes proches de l'écran existent. */
+.fenetre {
+  margin: var(--e5) var(--marge-page) 0;
+}
+
+.grille {
+  display: grid;
+}
+
+/*
+ * Une carte de la grille : la jaquette, puis son titre et son état dessous, bien aérés. Elle entre en
+ * montant, avec un léger retard selon sa colonne : une rangée arrive comme une vague. Sous le pointeur,
+ * la jaquette se soulève, penche vers lui (`--rx`, `--ry`, posés par la grille), une pellicule irisée
+ * et un reflet le suivent (`--gx`, `--gy`), et les autres cartes s'effacent.
+ */
+.carte {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  animation: arriver var(--duree-longue) var(--courbe) backwards;
+  animation-delay: calc(var(--colonne, 0) * var(--pas-cascade) * 0.7);
+  transition: opacity var(--duree) var(--courbe);
+}
+
+@keyframes arriver {
+  from {
+    opacity: 0;
+    transform: translateY(22px) scale(0.97);
+  }
+}
+
+/* Les autres cartes s'effacent un peu derrière celle que l'on regarde. */
+.grille:has(.carte:hover) .carte:not(:hover) {
+  opacity: 0.5;
+}
+
+.carteLien {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+  border-radius: var(--rayon-l);
+}
+
+.carteLien:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.carteCadre {
+  position: relative;
+  display: block;
+  aspect-ratio: 2 / 3;
+  border-radius: var(--rayon-l);
+  box-shadow: var(--ombre-carte);
+  transition:
+    transform var(--duree) var(--courbe),
+    box-shadow var(--duree) var(--courbe);
+}
+
+/* La perspective n'existe que sous le pointeur : au repos, une carte reste une image plate, sans calque à elle. */
+.carte:hover .carteCadre,
+.carte:focus-within .carteCadre {
+  transform: perspective(900px) translateY(-8px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) scale(1.02);
+  box-shadow:
+    0 0 0 2px var(--fond),
+    0 0 0 3.5px var(--ecarlate),
+    0 22px 50px -12px color-mix(in oklab, var(--couleur-jaquette, var(--ecarlate)) 75%, transparent);
+}
+
+.carteLien:focus-visible .carteCadre {
+  box-shadow:
+    0 0 0 3px var(--fond),
+    0 0 0 6px var(--texte);
+}
+
+/* Le reflet : une tache de lumière sous le pointeur, visible seulement au survol. */
+.carteCadre::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.carte:hover .carteCadre::after {
+  background: radial-gradient(circle at var(--gx, 50%) var(--gy, 0%), var(--eclat-holo), transparent 52%);
+  mix-blend-mode: overlay;
+}
+
+/* La pellicule holographique : des reflets irisés qui glissent quand la carte penche. */
+.carteCadre::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: inherit;
+  background: var(--holo);
+  background-size: 260% 260%;
+  background-position: var(--gx, 50%) var(--gy, 50%);
+  mix-blend-mode: color-dodge;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duree) var(--courbe);
+}
+
+.carte:hover .carteCadre::before {
+  opacity: 0.4;
+}
+
+.carteJaquette {
+  height: 100%;
+  border-radius: inherit;
+  overflow: hidden;
+}
+
+/* Le titre et l'état, sous la jaquette : une ligne chacun, de l'air autour. */
+.carteLegende {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  /* 12 px d'écart + 44 px : les 56 px que la grille fenêtrée compte sous chaque jaquette (LEGENDE). */
+  height: 44px;
+  min-width: 0;
+  padding: 0 var(--e1);
+}
+
+.carteTitre {
+  overflow: hidden;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+  letter-spacing: 0.015em;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--texte-2);
+  transition: color var(--duree) var(--courbe);
+}
+
+.carte:hover .carteTitre {
+  color: var(--texte);
+}
+
+.carteEtat {
+  font-size: 12px;
+  line-height: 18px;
+  letter-spacing: 0.04em;
+  color: var(--texte-3);
+}
+
+.carteEtat[data-installe] {
+  font-variant-numeric: tabular-nums;
+}
+
+.favori {
+  position: absolute;
+  top: var(--e2);
+  right: var(--e2);
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  background: color-mix(in srgb, var(--fond) 80%, transparent);
+  border-radius: 50%;
+  color: var(--accent);
+  pointer-events: none;
+}
+
+/* Le bouton Jouer, rond et carmin, monte au bas de la jaquette survolée. */
+.carteJouer {
+  position: absolute;
+  right: var(--e3);
+  bottom: calc(56px + var(--e3));
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  background: var(--degrade);
+  border: 0;
+  border-radius: 50%;
+  color: var(--sur-accent);
+  box-shadow: 0 0 22px color-mix(in srgb, var(--ecarlate) 65%, transparent);
+  opacity: 0;
+  transform: translateY(6px) scale(0.8);
+  transition:
+    opacity var(--duree) var(--courbe),
+    transform var(--duree) var(--courbe-ressort);
+}
+
+.carte:hover .carteJouer,
+.carte:focus-within .carteJouer {
+  opacity: 1;
+  transform: translateY(-8px);
+}
+
+.carteJouer:hover {
+  transform: translateY(-8px) scale(1.08);
+}
+
+.carteJouer:disabled {
+  background: var(--surface-3);
+  color: var(--texte-3);
+  box-shadow: none;
+}
+
+/* Écran tactile ou sans survol : le bouton Jouer est toujours visible. */
+@media (hover: none) {
+  .carteJouer {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ───────── Liste ───────── */
+.liste {
+  margin-top: var(--e5);
+  padding: 0 var(--marge-page);
+  container-type: inline-size;
+}
+
+.ligne,
+.listeEntete {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 150px 116px 96px 48px;
+  align-items: center;
+  gap: var(--e4);
+  padding: 0 var(--e3);
+}
+
+.listeEntete {
+  min-height: 36px;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: none;
+  white-space: nowrap;
+  color: var(--texte-3);
+}
+
+.ligne {
+  position: relative;
+  height: 64px;
+  border-radius: var(--rayon-m);
+}
+
+.ligne:hover,
+.ligne:focus-within {
+  background: var(--surface-1);
+}
+
+.ligneJeu {
+  display: flex;
+  align-items: center;
+  gap: var(--e3);
+  min-width: 0;
+  height: 64px;
+}
+
+/* Le lien couvre toute la ligne : on clique n'importe où pour ouvrir la fiche. */
+.ligneJeu::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+.ligneIcone {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--rayon-s);
+  background: var(--couleur-jaquette, var(--surface-2));
+  font-family: var(--police-titre);
+  font-stretch: var(--etirement-titre);
+  font-weight: 500;
+  text-transform: none;
+  overflow: hidden;
+}
+
+.ligneIcone img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ligneTitre {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ligneSous {
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--texte-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ligneAbsent .ligneTitre {
+  color: var(--texte-3);
+}
+
+.cellule {
+  font-size: 14px;
+  color: var(--texte-2);
+  white-space: nowrap;
+}
+
+.droite {
+  text-align: right;
+}
+
+.ligneJouer {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  background: transparent;
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-s);
+  color: var(--texte);
+}
+
+.ligneJouer:hover:not(:disabled) {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--sur-accent);
+}
+
+.ligneJouer:disabled {
+  color: var(--texte-3);
+}
+
+/* Fenêtre étroite : on garde le jeu, le temps de jeu et le bouton. */
+@container (max-width: 720px) {
+  .ligne,
+  .listeEntete {
+    grid-template-columns: minmax(0, 1fr) 116px 48px;
+  }
+
+  .secondaire {
+    display: none;
+  }
+}
+
+/* ───────── États ───────── */
+.vide {
+  padding: var(--e8) var(--marge-page) 0;
+}
+
+.squelettes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--taille-jaquette)), 1fr));
+  gap: var(--e4);
+  padding: var(--e8) var(--marge-page) 0;
+}
+
+/* Sans la scène (recherche), la liste démarre sous la barre du haut. */
+.sousLaBarre {
+  height: var(--e4);
+}
+
+/* ───────── Accueil : l'aperçu de la collection, avant « Tout voir » ───────── */
+.apercuTete {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e4);
+  margin: var(--e8) 0 var(--e5);
+  padding: 0 var(--marge-page);
+}
+
+.apercuLien {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 14px 0 18px;
+  border-radius: 999px;
+  color: var(--texte-2);
+  font-size: 14px;
+  letter-spacing: 0.02em;
+  background: rgb(255 255 255 / 0.04);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08);
+  transition:
+    color var(--duree-courte) var(--courbe),
+    background var(--duree-courte) var(--courbe);
+}
+
+.apercuLien svg {
+  transition: transform var(--duree) var(--courbe-ressort);
+}
+
+.apercuLien:hover {
+  color: var(--texte);
+  background: color-mix(in srgb, var(--ecarlate) 22%, transparent);
+}
+
+.apercuLien:hover svg {
+  transform: translateX(3px);
+}
+
+/* ───────── Page Bibliothèque : le grand titre ───────── */
+.entete {
+  padding: var(--e6) var(--marge-page) 0;
+  animation: monter var(--duree-longue) var(--courbe) backwards;
+}
+
+.grandTitre {
+  font-family: var(--police-titre);
+  font-size: clamp(34px, 3.6vw, 48px);
+  font-weight: 300;
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+}
+
+.sousTitre {
+  margin-top: var(--e2);
+  color: var(--texte-3);
+  letter-spacing: 0.02em;
+}
+
+@keyframes monter {
+  from {
+    opacity: 0;
+    transform: translateY(22px) scale(0.985);
+  }
+}

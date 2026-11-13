@@ -1,0 +1,446 @@
+/*
+ * L'affiche : un jeu en grand, avec son image, son logo et ses actions.
+ * Elle sert en haut de la bibliothèque (jeu à reprendre) et en haut de la fiche d'un jeu.
+ * Le texte tient en bas à gauche, là où les images de jeux laissent de la place.
+ *
+ * Elle vit : l'image dérive très lentement, un faisceau la traverse de temps en temps, des braises
+ * montent, et à chaque changement de jeu un volet en biais découvre la nouvelle image pendant que
+ * le titre, les chiffres et les boutons entrent l'un après l'autre.
+ */
+.affiche {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  background: var(--couleur-jeu);
+  border-radius: var(--rayon-xl);
+  box-shadow: var(--ombre-carte), inset 0 0 0 1px var(--trait);
+}
+
+/* Sans image : un dégradé sur la couleur du jeu évite un aplat uniforme. */
+.affiche::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -4;
+  background: radial-gradient(120% 90% at 78% 30%, color-mix(in oklab, var(--couleur-jeu) 70%, white) 0%, var(--couleur-jeu) 45%, color-mix(in oklab, var(--couleur-jeu) 40%, black) 100%);
+}
+
+/* Le plan des images : c'est lui qui dérive, d'un mouvement continu que le changement de jeu n'interrompt pas. */
+.images {
+  position: absolute;
+  inset: -4%;
+  z-index: -3;
+  animation: deriver var(--duree-ambiance) var(--cadence-ambiance) infinite alternate;
+  animation-play-state: var(--lecture-ambiance);
+  transition: opacity var(--duree-longue) var(--courbe);
+}
+
+/*
+ * Carmin : sur la fiche, l'image baigne dans le rouge (référence « Lethal Company ») ; ses lumières et ses
+ * ombres restent. Ailleurs (`--lavis-rouge` non posé), l'image garde ses couleurs.
+ */
+.images::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  /* Multiplier par l'écarlate : les blancs deviennent rouges, les ombres restent noires, l'orange disparaît. */
+  background: var(--ecarlate);
+  mix-blend-mode: multiply;
+  opacity: var(--lavis-rouge, 0);
+  pointer-events: none;
+}
+
+.images[data-eteintes] {
+  opacity: 0;
+}
+
+.image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  object-position: center 22%;
+  /* Parallaxe (variables posées sous le pointeur) : `translate` s'ajoute aux animations d'entrée sans les gêner. */
+  translate: calc(var(--px, 0) * -22px) calc(var(--py, 0) * -14px);
+  transition: translate calc(var(--duree-longue) * 1.4) var(--courbe);
+}
+
+/* Une lumière douce suit le pointeur sur l'image. */
+.projecteur {
+  inset: 0;
+  background: radial-gradient(38% 50% at var(--gx, 50%) var(--gy, 40%), color-mix(in srgb, var(--accent) 16%, transparent), transparent);
+  opacity: 0;
+  transition: opacity var(--duree-longue) var(--courbe);
+}
+
+.affiche:hover .projecteur {
+  opacity: 1;
+}
+
+.image[data-entree='fondu'] {
+  animation: apparaitre var(--duree-longue) var(--courbe);
+}
+
+/* Le volet : un bord en biais part de la droite et découvre l'image. */
+.image[data-entree='volet'] {
+  animation: decouvrir calc(var(--duree-longue) * 1.3) var(--courbe);
+}
+
+/*
+ * Trois voiles : le bas se fond dans la page, un pan incliné assombrit la gauche sous le texte,
+ * et le haut s'éteint un peu sous la barre de navigation.
+ */
+.affiche::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background:
+    linear-gradient(180deg, transparent 38%, color-mix(in srgb, var(--fond) 78%, transparent) 78%, var(--fond) 100%),
+    linear-gradient(102deg, color-mix(in srgb, var(--fond) 94%, transparent) 0%, color-mix(in srgb, var(--fond) 72%, transparent) 30%, transparent 58%),
+    linear-gradient(180deg, color-mix(in srgb, var(--fond) 55%, transparent) 0%, transparent 20%);
+}
+
+/* Les effets passent devant les voiles et derrière le texte. */
+.effets {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.effets > * {
+  position: absolute;
+}
+
+/* Un faisceau traverse l'affiche de gauche à droite, puis attend le tour suivant. */
+.faisceau {
+  top: -20%;
+  left: 0;
+  width: 26%;
+  height: 140%;
+  background: linear-gradient(90deg, transparent, var(--lumiere), transparent);
+  opacity: 0;
+  animation: traverser calc(var(--duree-balayage) * 1.8) var(--courbe) infinite;
+  animation-play-state: var(--lecture-ambiance);
+}
+
+/* Une braise : elle naît au bas de l'affiche, monte en dérivant et s'éteint. Figée, elle reste invisible. */
+.braise {
+  left: calc(var(--x) * 1%);
+  bottom: -8px;
+  /* Le point et son halo tiennent dans un seul dégradé : une ombre floue par braise coûterait à chaque image. */
+  --braise: color-mix(in oklab, var(--couleur-jeu) 30%, var(--texte));
+  width: calc(var(--taille) * 4);
+  height: calc(var(--taille) * 4);
+  border-radius: 50%;
+  background: radial-gradient(closest-side, var(--braise) 22%, color-mix(in srgb, var(--braise) 30%, transparent) 40%, transparent);
+  opacity: 0;
+  animation: monter calc(var(--duree-ambiance) * var(--duree)) linear infinite backwards;
+  animation-delay: calc(var(--duree-ambiance) * var(--retard) * 0.6);
+  animation-play-state: var(--lecture-ambiance);
+}
+
+.braise:nth-child(3n) {
+  --braise: var(--accent);
+}
+
+/* Quatre équerres aux coins de l'image, comme un viseur. */
+.reperes {
+  inset: var(--e5) var(--marge-page) var(--e6);
+  --trait-repere: linear-gradient(var(--trait-clair), var(--trait-clair));
+  background:
+    var(--trait-repere) right top / 22px 1px no-repeat,
+    var(--trait-repere) right top / 1px 22px no-repeat,
+    var(--trait-repere) right bottom / 22px 1px no-repeat,
+    var(--trait-repere) right bottom / 1px 22px no-repeat;
+  opacity: 0;
+}
+
+.contenu {
+  min-height: clamp(420px, 58vh, 620px);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--e8);
+  padding: var(--e5) var(--marge-page) var(--marge-bas-affiche, var(--e8));
+}
+
+.haut:empty {
+  display: none;
+}
+
+.bas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--e6) var(--e10);
+  margin-top: auto;
+}
+
+/* Le panneau d'informations : chaque ligne entre par la gauche, l'une après l'autre. */
+.infos {
+  translate: calc(var(--px, 0) * 8px) calc(var(--py, 0) * 5px);
+  transition: translate calc(var(--duree-longue) * 1.4) var(--courbe);
+  flex: 1 1 420px;
+  min-width: 0;
+  max-width: 820px;
+}
+
+.infos > * {
+  animation: entrer var(--duree-longue) var(--courbe) backwards;
+  animation-delay: calc(var(--duree-courte) + var(--rang, 5) * var(--pas-cascade) * 1.4);
+}
+
+.infos > :nth-child(1) {
+  --rang: 0;
+}
+.infos > :nth-child(2) {
+  --rang: 1;
+}
+.infos > :nth-child(3) {
+  --rang: 2;
+}
+.infos > :nth-child(4) {
+  --rang: 3;
+}
+.infos > :nth-child(5) {
+  --rang: 4;
+}
+
+.cote {
+  flex: none;
+  max-width: 100%;
+  animation: entrerParLaDroite var(--duree-longue) var(--courbe) backwards;
+  animation-delay: calc(var(--duree) * 1.4);
+}
+
+/* L'étiquette au-dessus du titre est précédée d'un trait incliné. */
+.infos > :global(.sur-titre)::before {
+  content: '';
+  display: inline-block;
+  width: 30px;
+  height: 3px;
+  margin-right: 10px;
+  vertical-align: middle;
+  border-radius: 3px;
+  background: var(--degrade);
+}
+
+.logo {
+  width: min(420px, 100%);
+  max-height: 190px;
+  margin-top: 14px;
+  object-fit: contain;
+  object-position: left bottom;
+  filter: drop-shadow(var(--ombre-texte));
+}
+
+/* Le titre : le seul texte de l'écran en italique, avec le bouton Jouer. Il se dévoile de gauche à droite. */
+.titre {
+  margin-top: 6px;
+  font-family: var(--police-titre);
+  font-stretch: var(--etirement-titre);
+  font-size: calc(clamp(44px, 5.4vw, 92px) * var(--reduction, 1));
+  line-height: 0.98;
+  font-weight: 300;
+  letter-spacing: var(--serrage-titre);
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+  text-shadow: var(--ombre-texte);
+}
+
+.infos > .titre,
+.infos > .titreEnImage {
+  animation-name: devoiler;
+  animation-duration: calc(var(--duree-longue) * 1.25);
+}
+
+/* Un titre long est composé plus petit : il garde deux ou trois lignes au lieu de cinq (voir `gabaritDeTitre`). */
+.titre[data-gabarit='long'] {
+  --reduction: 0.72;
+}
+
+.titre[data-gabarit='tres_long'] {
+  --reduction: 0.5;
+  line-height: 0.98;
+}
+
+.ligne {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 0;
+  margin-top: 14px;
+  color: var(--texte);
+  font-weight: 500;
+  text-shadow: var(--ombre-texte);
+}
+
+/* La barre inclinée entre deux faits n'est pas lue par les lecteurs d'écran. */
+.ligne span + span::before {
+  content: '•' / '';
+  margin: 0 10px;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+/* Les tuiles de chiffres : du verre sombre sur l'image, un libellé en petites capitales, la valeur en grand. */
+.tuiles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e2);
+  margin-top: var(--e5);
+}
+
+.tuile {
+  position: relative;
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: flex-end;
+  min-width: 132px;
+  padding: 10px var(--e4) 12px;
+  overflow: hidden;
+  /* Pas de verre dépoli ici : l'image dessous dérive, le flou serait recalculé à chaque pas. */
+  background: linear-gradient(160deg, color-mix(in srgb, var(--surface-3) 78%, transparent), color-mix(in srgb, var(--fond) 84%, transparent));
+  border: 1px solid color-mix(in srgb, var(--trait-clair) 50%, transparent);
+  border-radius: var(--rayon-m);
+}
+
+.tuile dt {
+  font-family: var(--police-texte);
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 500;
+  letter-spacing: var(--espacement-etiquette);
+  text-transform: none;
+  color: var(--texte-3);
+}
+
+.tuile dd {
+  font-family: var(--police-titre);
+  font-stretch: var(--etirement-titre);
+  font-size: calc(21px * var(--echelle-titre));
+  line-height: calc(24px * var(--echelle-titre));
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.tuile dd small {
+  font-size: 0.62em;
+  font-weight: 500;
+  color: var(--texte-3);
+}
+
+.jauge {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: var(--trait);
+}
+
+.jauge > span {
+  display: block;
+  height: 100%;
+  border-radius: 0 3px 3px 0;
+  background: var(--degrade);
+  transform-origin: left;
+  animation: remplir calc(var(--duree-longue) * 1.6) var(--courbe) backwards;
+  animation-delay: var(--duree-longue);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+@keyframes apparaitre {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes decouvrir {
+  from {
+    clip-path: polygon(100% 0, 100% 0, 100% 100%, 124% 100%);
+  }
+  to {
+    clip-path: polygon(-24% 0, 100% 0, 100% 100%, 0 100%);
+  }
+}
+
+@keyframes deriver {
+  from {
+    transform: scale(1.02);
+  }
+  to {
+    transform: scale(1.1) translate(-1.4%, 1%);
+  }
+}
+
+@keyframes entrer {
+  from {
+    opacity: 0;
+    transform: translateX(-28px);
+  }
+}
+
+@keyframes entrerParLaDroite {
+  from {
+    opacity: 0;
+    transform: translateX(32px);
+  }
+}
+
+@keyframes devoiler {
+  from {
+    opacity: 0;
+    clip-path: inset(-20% 100% -20% -6%);
+    transform: translateX(-36px);
+  }
+  to {
+    clip-path: inset(-20% -20% -20% -6%);
+  }
+}
+
+@keyframes traverser {
+  0%,
+  52% {
+    opacity: 0;
+    transform: translateX(-120%) skewX(-18deg);
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(520%) skewX(-18deg);
+  }
+}
+
+@keyframes monter {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0);
+  }
+  12% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--derive), -520px);
+  }
+}
+
+@keyframes remplir {
+  from {
+    transform: scaleX(0);
+  }
+}

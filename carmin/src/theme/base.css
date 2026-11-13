@@ -1,0 +1,357 @@
+/* Remise à plat et styles communs à tous les écrans. Les composants ont leur propre fichier .module.css. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--fond);
+  color: var(--texte);
+  font-family: var(--police-texte);
+  font-size: 15px;
+  /* Carmin : un texte aéré, un interligne généreux et un interlettrage légèrement ouvert. */
+  line-height: 24px;
+  letter-spacing: var(--interlettrage);
+  font-feature-settings: var(--variantes-texte);
+  font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  /* La place de la barre de défilement est réservée : la page ne saute pas quand elle apparaît. */
+  scrollbar-gutter: stable;
+  scrollbar-color: var(--trait-fort) var(--fond);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  /* Explicite : une page hôte (artefact, aperçu) peut imposer son propre fond au body. */
+  background: var(--fond);
+  color: var(--texte);
+  /* Le décor (z-index -1) doit passer AU-DESSUS de ce fond : le body forme donc son propre empilement. */
+  isolation: isolate;
+}
+
+h1,
+h2,
+h3,
+p,
+ul,
+ol,
+dl,
+dd,
+figure {
+  margin: 0;
+}
+
+ul,
+ol {
+  padding: 0;
+  list-style: none;
+}
+
+img,
+svg {
+  display: block;
+}
+
+img {
+  max-width: 100%;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: default;
+}
+
+::selection {
+  background: var(--accent-2);
+  color: var(--sur-accent);
+}
+
+/*
+ * Un seul anneau de focus pour toute l'application, visible au clavier seulement.
+ * Deux couleurs (sombre puis accent) : il reste lisible sur une jaquette claire comme sur le fond noir.
+ */
+:focus-visible {
+  outline: 2px solid var(--accent-3);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--fond);
+}
+
+/*
+ * Conteneur d'une longue liste fenêtrée (`useFenetre`) : il ne tient le focus qu'entre le moment où
+ * l'élément qui l'avait sort de la fenêtre et la touche Tab suivante. Un anneau autour de 2 000 jeux
+ * ne dirait rien.
+ */
+[data-fenetre]:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+/* Texte réservé aux lecteurs d'écran. */
+.hors-ecran {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Titre de section : moyen, en casse normale, précédé d'un petit point rouge qui luit. Épuré. */
+.titre-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--police-titre);
+  font-stretch: var(--etirement-titre);
+  font-size: calc(20px * var(--echelle-titre));
+  line-height: calc(28px * var(--echelle-titre));
+  font-weight: var(--graisse-titre);
+  letter-spacing: var(--serrage-titre);
+}
+
+.titre-section::before {
+  content: '';
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--degrade);
+  box-shadow: 0 0 12px 1px color-mix(in srgb, var(--ecarlate) 70%, transparent);
+}
+
+/* Petite étiquette en capitales au-dessus d'un titre, écrite dans le dégradé d'accent. */
+.sur-titre {
+  font-family: var(--police-texte);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  letter-spacing: var(--espacement-etiquette);
+  text-transform: none;
+  color: var(--accent);
+}
+
+@supports (background-clip: text) {
+  .sur-titre {
+    width: fit-content;
+    background: var(--degrade);
+    background-clip: text;
+    color: transparent;
+  }
+}
+
+/*
+ * Cadre vitré : un rectangle arrondi au liseré lumineux, pour ce qui compte sur un écran.
+ * Deux calques sous le contenu : le liseré, puis le fond un pixel plus petit. L'élément lui-même garde
+ * son anneau de focus.
+ *   --biseau-taille : rayon ; --biseau-fond, --biseau-trait : les deux couleurs ;
+ *   --biseau-marque : si posée (par exemple `var(--degrade)`), remplace le liseré : un bloc vivant.
+ * (Le nom vient du thème précédent, où ce cadre avait deux angles coupés.)
+ */
+.biseau {
+  position: relative;
+  isolation: isolate;
+}
+
+.biseau::before,
+.biseau::after {
+  --b: var(--biseau-taille, var(--biseau));
+  content: '';
+  position: absolute;
+  z-index: -1;
+  border-radius: var(--b);
+  pointer-events: none;
+}
+
+.biseau::before {
+  inset: 0;
+  padding: 1px;
+  background: var(--biseau-marque, var(--biseau-trait, var(--lisere)));
+  /* Seul l'anneau d'un pixel reste visible : le fond de verre, translucide, ne doit pas le laisser voir. */
+  mask:
+    linear-gradient(black 0 0) content-box,
+    linear-gradient(black 0 0);
+  mask-composite: exclude;
+}
+
+.biseau::after {
+  inset: 1px;
+  border-radius: calc(var(--b) - 1px);
+  background: var(--biseau-fond, var(--panneau-fort));
+  /* Verre dépoli : le panneau laisse passer, floues, les couleurs de ce qui est derrière lui. */
+  backdrop-filter: var(--verre);
+}
+
+/* Le même verre, sans cadre, pour une carte ou un panneau simple. */
+.verre {
+  background: var(--fond-verre);
+  backdrop-filter: var(--verre);
+  box-shadow: var(--arete), inset 0 0 0 1px var(--trait);
+}
+
+.chiffres {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Les titres gardent un interlettrage presque neutre : aéré, façon Apple. */
+h1,
+h2,
+h3 {
+  letter-spacing: var(--serrage-titre);
+}
+
+/*
+ * Entrée en cascade : les enfants directs montent l'un après l'autre. On la pose sur ce qui structure
+ * un écran (en-tête, sections, cartes d'une liste), pas sur du texte courant.
+ * `backwards` et non `both` : une fois arrivé, l'élément ne garde aucune trace de l'animation, donc
+ * ni contexte d'empilement (un menu ouvert passerait sous la section suivante) ni repère pour `fixed`.
+ */
+.cascade > * {
+  animation: monter var(--duree-longue) var(--courbe) backwards;
+  animation-delay: calc(var(--rang, 9) * var(--pas-cascade));
+}
+
+.cascade > :nth-child(1) {
+  --rang: 0;
+}
+.cascade > :nth-child(2) {
+  --rang: 1;
+}
+.cascade > :nth-child(3) {
+  --rang: 2;
+}
+.cascade > :nth-child(4) {
+  --rang: 3;
+}
+.cascade > :nth-child(5) {
+  --rang: 4;
+}
+.cascade > :nth-child(6) {
+  --rang: 5;
+}
+.cascade > :nth-child(7) {
+  --rang: 6;
+}
+.cascade > :nth-child(8) {
+  --rang: 7;
+}
+.cascade > :nth-child(9) {
+  --rang: 8;
+}
+
+@keyframes monter {
+  from {
+    opacity: 0;
+    transform: translateY(22px) scale(0.985);
+  }
+}
+
+/* Un dégradé d'accent qui glisse sur lui-même : à poser avec `background-size: 220% 100%`. */
+@keyframes moirer {
+  from {
+    background-position: 0% 50%;
+  }
+  to {
+    background-position: 100% 50%;
+  }
+}
+
+/* Une jauge se remplit en arrivant à l'écran. À poser sur la partie pleine, avec `transform-origin: left`. */
+@keyframes remplir {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+/*
+ * Changement d'écran (View Transitions) : l'ancien s'efface en reculant un peu, le nouveau monte.
+ * La barre du haut, la barre d'état et le panneau d'amis portent leur propre nom : ils restent en place.
+ * Le trait sous l'onglet actif aussi, ce qui le fait glisser d'un onglet à l'autre.
+ * Sans mouvement, les durées valent zéro : le changement est immédiat.
+ */
+::view-transition-old(root) {
+  animation: quitter var(--duree) var(--courbe) both;
+}
+
+::view-transition-new(root) {
+  animation: arriver var(--duree) var(--courbe) both;
+}
+
+::view-transition-group(*) {
+  animation-duration: var(--duree-longue);
+  animation-timing-function: var(--courbe);
+}
+
+@keyframes quitter {
+  to {
+    opacity: 0;
+    transform: scale(0.99);
+  }
+}
+
+@keyframes arriver {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes lueur {
+  from {
+    opacity: 0.55;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/*
+ * L'envol d'une jaquette vers l'affiche de la fiche (voir `coque/envol.ts`) : un peu plus long qu'un
+ * changement d'écran, l'image garde ses proportions (recadrée, jamais déformée) pendant le voyage.
+ */
+::view-transition-group(jaquette-envol) {
+  animation-duration: calc(var(--duree-longue) * 1.1);
+  animation-timing-function: cubic-bezier(0.3, 0, 0, 1);
+  z-index: 5;
+}
+
+::view-transition-old(jaquette-envol),
+::view-transition-new(jaquette-envol) {
+  height: 100%;
+  object-fit: cover;
+  overflow: clip;
+  border-radius: var(--rayon-xl);
+}
+
+::view-transition-old(jaquette-envol) {
+  animation: quitter-envol calc(var(--duree-longue) * 1.1) var(--courbe) both;
+}
+
+@keyframes quitter-envol {
+  to {
+    opacity: 0;
+  }
+}
+
+/* Une image absente (non emportée dans l'artefact) ne montre jamais le pictogramme cassé du navigateur. */
+img[src="data:,"],
+img:not([src]) {
+  visibility: hidden;
+}
