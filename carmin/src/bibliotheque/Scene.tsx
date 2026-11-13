@@ -75,26 +75,6 @@ function useCouches(jeu: JeuResume, image: string | null | undefined): [Couche[]
   return [couches, arrivee];
 }
 
-/** Les braises qui montent du bas de l'écran : place, retard, durée et taille, fixés une fois pour toutes. */
-const BRAISES = [
-  [6, 0, 1, 3],
-  [14, 3.1, 1.3, 2],
-  [22, 6.4, 0.9, 4],
-  [31, 1.7, 1.15, 2],
-  [38, 8.2, 1.05, 3],
-  [47, 4.5, 1.4, 2],
-  [55, 0.9, 0.95, 3],
-  [61, 7.1, 1.2, 5],
-  [68, 2.6, 1, 2],
-  [74, 5.3, 1.35, 3],
-  [81, 9.4, 0.9, 2],
-  [87, 3.8, 1.1, 4],
-  [93, 6.9, 1.25, 2],
-  [43, 10.6, 1.1, 2],
-  [26, 11.8, 1.2, 3],
-  [65, 12.4, 0.85, 2],
-] as const;
-
 /** Les jeux à redécouvrir : jamais lancés, ou pas depuis six mois, les mieux notés d'abord. */
 const SIX_MOIS = 182 * 86_400_000;
 
@@ -266,11 +246,6 @@ export function Scene({ jeu, recents }: { jeu: JeuResume; recents: JeuResume[] }
               <span key={couche.cle} className={styles.sol} style={{ '--couleur-couche': couche.couleur ?? undefined } as CSSProperties} />
             ))}
             <span className={styles.balayage} />
-            <span className={styles.braises}>
-              {BRAISES.map(([x, retard, duree, taille], index) => (
-                <i key={index} style={{ '--x': `${x}%`, '--retard': `${retard}s`, '--lent': duree, '--taille': `${taille}px` } as CSSProperties} />
-              ))}
-            </span>
           </div>
 
           <div key={jeu.id} className={styles.infos}>

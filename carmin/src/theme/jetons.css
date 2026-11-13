@@ -117,9 +117,9 @@
   /* Ce qui est « en ligne » : un rose pâle, distinct du vert « en jeu ». */
   --cyan: #ff8fb3;
   /* Halo de ce qui est actif ou survolé. */
-  --lueur-accent: 0 6px 26px color-mix(in srgb, var(--accent) 45%, transparent);
+  --lueur-accent: 0 4px 14px color-mix(in srgb, var(--accent) 22%, transparent);
   /* Halo plus large, sous le grand bouton Jouer : il respire. */
-  --halo-accent: 0 10px 46px 6px color-mix(in srgb, var(--accent-2) 45%, transparent);
+  --halo-accent: 0 8px 24px color-mix(in srgb, var(--accent-2) 22%, transparent);
 
   /* États. Contraste sur --fond : 11,4 et 7,9 pour 1. */
   /* Pas d'ambre (le propriétaire n'aime pas l'orange) : l'alerte est un rose pâle, le danger un rouge vif. */
@@ -209,7 +209,8 @@
   --duree-balayage: 6s;
   /* Un dégradé d'accent qui glisse lentement sur lui-même (bouton Jouer, carte vedette, élément actif). */
   --duree-moire: 7s;
-  --lecture-ambiance: running;
+  /* Épuré (13/11) : l'ambiance est posée, plus rien ne tourne en boucle. Mettre `running` pour la réveiller. */
+  --lecture-ambiance: paused;
   /*
    * Les grandes surfaces (lumières du fond, image de l'affiche) ne bougent que huit fois par seconde.
    * À leur vitesse, moins d'un pixel par pas, l'œil voit un mouvement continu.

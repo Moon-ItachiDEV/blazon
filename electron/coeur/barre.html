@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:">
+<title>Blazon</title>
+<style>
+  html, body { margin: 0; overflow: hidden; }
+  html { height: 100%; background: transparent; }
+  body {
+    height: 34px; display: flex; align-items: center; gap: 10px;
+    padding: 0 16px; box-sizing: border-box;
+    -webkit-app-region: drag; user-select: none; cursor: default;
+    font: 500 12.5px/1 "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+    letter-spacing: 0.01em;
+    -webkit-font-smoothing: antialiased;
+  }
+  svg { width: 16px; height: 16px; flex: none; filter: drop-shadow(0 0 6px rgba(255, 45, 138, .35)); }
+  .nom { opacity: .92; }
+  .sep { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: .35; }
+  .ecran { opacity: .55; font-weight: 400; transition: opacity .2s; }
+  .ecran:empty, .ecran:empty + * { display: none; }
+</style>
+</head>
+<body>
+<svg viewBox="0 0 120 120" aria-hidden="true">
+  <defs><linearGradient id="g" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#ff2d8a"/><stop offset="1" stop-color="#8a5cff"/></linearGradient></defs>
+  <path d="M60 7 L104 22 V58 C104 84 86 101 60 113 C34 101 16 84 16 58 V22 Z" fill="#0d0a16" stroke="url(#g)" stroke-width="8" stroke-linejoin="round"/>
+  <polyline points="36,80 60,58 84,80" fill="none" stroke="url(#g)" stroke-width="12" stroke-linejoin="miter"/>
+  <polyline points="40,56 60,38 80,56" fill="none" stroke="url(#g)" stroke-width="10" stroke-opacity="0.7" stroke-linejoin="miter"/>
+</svg>
+<span class="nom">Blazon</span>
+<span class="sep" id="sep"></span>
+<span class="ecran" id="ecran"></span>
+<script>
+  const p = new URLSearchParams(location.search);
+  document.body.style.background = p.get('bande') || p.get('fond') || '#000';
+  document.body.style.color = p.get('texte') || '#fff';
+  const ecran = document.getElementById('ecran');
+  const sep = document.getElementById('sep');
+  window.ecran = (t) => { ecran.textContent = t; sep.style.display = t ? '' : 'none'; };
+  window.ecran('');
+</script>
+</body>
+</html>

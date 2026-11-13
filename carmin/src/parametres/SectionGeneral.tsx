@@ -1,4 +1,3 @@
-import type { CSSProperties } from 'react';
 import type { Parametres } from '../../contrat/types';
 import { LigneDeReglage, ReglageOuiNon, Segments } from '../composants/Formulaire';
 import { Carte, Section } from './Bloc';
@@ -6,37 +5,12 @@ import { modifierLesParametres } from '../etat/application';
 import { useTexte } from '../i18n/react';
 import styles from './Parametres.module.css';
 
-/**
- * Ce que change le réglage Animations, montré tout de suite : des ondes au dégradé du logo qui
- * battent, une orbite et un reflet qui passe. Tout suit les jetons de durée : quand les animations
- * sont coupées, la bande se fige d'elle-même.
- */
-function ApercuDesAnimations() {
-  const { t } = useTexte();
-  return (
-    <div className={styles.apercuAnimations} aria-hidden="true">
-      <span className={styles.apercuEtiquette}>
-        <span className={styles.apercuPoint} />
-        {t('parametres.animations.apercu')}
-      </span>
-      <span className={styles.ondes}>
-        {Array.from({ length: 24 }, (_, index) => (
-          <span key={index} style={{ '--i': index } as CSSProperties} />
-        ))}
-      </span>
-      <span className={styles.orbite}>
-        <span />
-      </span>
-    </div>
-  );
-}
-
 export function SectionGeneral({ parametres }: { parametres: Parametres }) {
   const { t } = useTexte();
   return (
     <>
       <Section titre={t('parametres.interface')}>
-        <Carte apercu={<ApercuDesAnimations />}>
+        <Carte>
           <LigneDeReglage nom={t('parametres.langue')} aide={t('parametres.langue.aide')}>
             {/* Chaque langue est écrite dans sa propre langue : on la retrouve même si l'on ne lit pas l'autre. */}
             <Segments

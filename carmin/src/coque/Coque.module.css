@@ -653,6 +653,7 @@
   transform: translateX(50%);
   transition:
     right 460ms var(--courbe),
+    top 460ms var(--courbe),
     color var(--duree) var(--courbe),
     box-shadow var(--duree) var(--courbe),
     width var(--duree) var(--courbe-ressort);
@@ -668,6 +669,11 @@
 
 .languette svg {
   transition: transform 460ms var(--courbe-ressort);
+}
+
+/* Colonne repliée : la languette descend sous le portrait du profil, pour ne jamais le masquer. */
+.application[data-colonne-repliee] .languette {
+  top: 100px;
 }
 
 .application[data-colonne-repliee] .languette svg {

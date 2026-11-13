@@ -17,9 +17,20 @@ html {
   font-optical-sizing: auto;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  /* La place de la barre de défilement est réservée : la page ne saute pas quand elle apparaît. */
-  scrollbar-gutter: stable;
-  scrollbar-color: var(--trait-fort) var(--fond);
+  /* Pas de barre de défilement pour la page : sous Windows, elle mangeait la colonne de droite
+     (le portrait du profil passait sous la languette quand la colonne est repliée). La molette et
+     le clavier font défiler comme avant. */
+  scrollbar-width: none;
+}
+
+/* Les zones qui défilent ont une barre fine et discrète, pas la large barre grise à flèches de Windows. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(255 255 255 / 0.16) transparent;
+}
+
+html {
+  scrollbar-width: none;
 }
 
 body {
@@ -129,6 +140,8 @@ button:disabled {
 }
 
 .titre-section::before {
+  /* Épuré : plus de point rouge devant les titres de section. */
+  display: none;
   content: '';
   flex: none;
   width: 7px;

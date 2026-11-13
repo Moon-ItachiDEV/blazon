@@ -31,18 +31,6 @@ interface Couche {
   volet: boolean;
 }
 
-/**
- * Les braises : quelques points de lumière qui montent dans l'affiche. Leur place, leur taille et leur
- * rythme sont tirés de leur rang, pas du hasard : deux rendus donnent la même image.
- */
-const BRAISES = Array.from({ length: 12 }, (_, rang) => ({
-  x: (rang * 37 + 9) % 100,
-  taille: 2 + ((rang * 7) % 4),
-  retard: ((rang * 53) % 100) / 100,
-  duree: 0.5 + ((rang * 29) % 50) / 100,
-  derive: ((rang * 41) % 120) - 60,
-}));
-
 export function Affiche({ couleur, image, enAttente = false, haut, cote, idDuTitre, cle, className = '', children }: Proprietes) {
   useAmbiance(couleur, image);
 
@@ -82,13 +70,6 @@ export function Affiche({ couleur, image, enAttente = false, haut, cote, idDuTit
       <div className={styles.effets} aria-hidden="true">
         <span className={styles.faisceau} />
         <span className={styles.projecteur} />
-        {BRAISES.map((braise) => (
-          <span
-            key={braise.x}
-            className={styles.braise}
-            style={{ '--x': braise.x, '--taille': `${braise.taille}px`, '--retard': braise.retard, '--duree': braise.duree, '--derive': `${braise.derive}px` } as CSSProperties}
-          />
-        ))}
         <span className={styles.reperes} />
       </div>
       <div className={styles.contenu}>

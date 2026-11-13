@@ -126,7 +126,8 @@ class CoeurReel {
 
   ecrireBientot() {
     clearTimeout(this.minuterieEcriture);
-    this.minuterieEcriture = setTimeout(() => void this.ecrire(), 800);
+    // Le cache peut peser quelques Mo : on l'écrit au plus toutes les 3 s, pas à chaque jeu reçu.
+    this.minuterieEcriture = setTimeout(() => void this.ecrire(), 3000);
   }
 
   async ecrire() {
@@ -451,10 +452,19 @@ class CoeurReel {
     }
   }
 
+  /**
+   * Jeux possédés, par appid. Gardé en mémoire tant que la liste, le compte et le niveau ne changent pas :
+   * la bibliothèque le consulte deux fois par jeu, il était reconstruit 4 000 fois pour 2 000 jeux.
+   */
   possedes() {
     const p = this.c.possedes;
-    if (!p || p.steamid !== this.steamidActif() || !this.personnelOk()) return new Map();
-    return new Map(p.jeux.map((g) => [g.appid, g]));
+    const steamid = this.steamidActif();
+    const ok = Boolean(p) && p.steamid === steamid && this.personnelOk();
+    const m = this.memoPossedes;
+    if (m && m.p === p && m.steamid === steamid && m.ok === ok) return m.carte;
+    const carte = ok ? new Map(p.jeux.map((g) => [g.appid, g])) : new Map();
+    this.memoPossedes = { p, steamid, ok, carte };
+    return carte;
   }
 
   appidsVisibles() {

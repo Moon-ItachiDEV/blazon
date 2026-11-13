@@ -22,14 +22,6 @@ import styles from './Profil.module.css';
 /** Erreurs que le joueur règle dans la section Steam des paramètres (clé) ou dans Steam (confidentialité). */
 const SE_REGLE_DANS_STEAM = new Set<ErreurApp['code']>(['cle_absente', 'cle_refusee', 'profil_prive']);
 
-/** Un niveau tous les 100 h de jeu : un repère de joueur tiré du temps de jeu réel, expliqué à l'écran. */
-const MINUTES_PAR_NIVEAU = 100 * 60;
-
-function niveauDe(minutes: number): { niveau: number; progression: number; reste: number } {
-  const dansLeNiveau = minutes % MINUTES_PAR_NIVEAU;
-  return { niveau: Math.floor(minutes / MINUTES_PAR_NIVEAU) + 1, progression: dansLeNiveau / MINUTES_PAR_NIVEAU, reste: MINUTES_PAR_NIVEAU - dansLeNiveau };
-}
-
 /** Couleur de chaque source dans l'anneau : des teintes du thème, jamais d'orange. */
 const COULEUR_DE_SOURCE: Record<Source, string> = {
   steam: 'var(--accent-3)',
@@ -76,14 +68,13 @@ interface ProprietesCarte {
 
 /**
  * L'en-tête du profil, comme une carte de joueur esport : la bannière des jeux les plus joués qui défile
- * lentement, l'avatar dans un anneau néon, le pseudo, le niveau (tiré du temps de jeu) et la part de la
+ * lentement, l'avatar dans un anneau néon, le pseudo et la part de la
  * bibliothèque déjà explorée.
  */
 function CarteDeJoueur({ pseudo, avatar, steamid, plusieursComptes, jeux }: ProprietesCarte) {
   const { t, langue } = useTexte();
   const banniere = useMemo(() => (jeux === null ? [] : plusJoues(jeux, 14).filter((jeu) => jeu.jaquette !== null)), [jeux]);
   const chiffres = useMemo(() => (jeux === null ? null : calculerLesChiffres(jeux)), [jeux]);
-  const niveau = chiffres === null ? null : niveauDe(chiffres.minutes_total);
   const lances = chiffres === null ? 0 : chiffres.jeux - chiffres.jamais_lances;
   const exploree = chiffres === null || chiffres.jeux === 0 ? 0 : (lances / chiffres.jeux) * 100;
 
@@ -115,17 +106,8 @@ function CarteDeJoueur({ pseudo, avatar, steamid, plusieursComptes, jeux }: Prop
               {t('profil.compte_steam')}
             </span>
           )}
-          {niveau !== null && <span className={`${styles.pilule} ${styles.piluleNiveau}`}>{t('profil.niveau', { n: formaterNombre(niveau.niveau, langue) })}</span>}
         </div>
         <p className={pseudo === null ? styles.pseudoAbsent : styles.pseudo}>{pseudo ?? t('profil.pseudo_inconnu')}</p>
-        {niveau !== null && (
-          <div className={styles.niveau}>
-            <span className={styles.jauge} aria-hidden="true">
-              <span className={styles.plein} style={{ '--part': niveau.progression } as CSSProperties} />
-            </span>
-            <span className={styles.niveauTexte}>{t('profil.niveau.explication', { temps: formaterTempsDeJeu(niveau.reste, langue) })}</span>
-          </div>
-        )}
         {plusieursComptes && (
           <Lien className={classeBouton({ variante: 'texte' }, styles.changer)} vers={{ ecran: 'parametres', section: 'steam' }}>
             {t('profil.changer_de_compte')}

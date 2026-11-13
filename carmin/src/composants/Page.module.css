@@ -65,6 +65,8 @@
 }
 
 .entete::after {
+  /* Épuré : plus de filet rouge sous chaque titre de page. */
+  display: none;
   content: '';
   position: absolute;
   left: 0;
