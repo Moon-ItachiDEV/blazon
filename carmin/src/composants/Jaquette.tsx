@@ -4,11 +4,9 @@ import { useTexte } from '../i18n/react';
 import styles from './Jaquette.module.css';
 
 interface Proprietes {
-  jeu: Pick<JeuResume, 'titre' | 'jaquette' | 'couleur_dominante' | 'sources' | 'installe'>;
+  jeu: Pick<JeuResume, 'titre' | 'jaquette' | 'couleur_dominante' | 'sources'>;
   /** Vrai pour les quelques images visibles dès l'ouverture : elles sont chargées sans attendre. */
   prioritaire?: boolean;
-  /** Atténue l'image d'un jeu qui n'est pas installé. */
-  estomperSiAbsent?: boolean;
   className?: string;
 }
 
@@ -16,7 +14,7 @@ interface Proprietes {
  * La jaquette d'un jeu. Elle est décorative : le titre est porté par le lien ou la carte autour.
  * Si l'image manque ou ne se charge pas (hors ligne, adresse morte), la jaquette est dessinée.
  */
-export const Jaquette = memo(function Jaquette({ jeu, prioritaire = false, estomperSiAbsent = false, className = '' }: Proprietes) {
+export const Jaquette = memo(function Jaquette({ jeu, prioritaire = false, className = '' }: Proprietes) {
   const { t } = useTexte();
   const [echec, setEchec] = useState(false);
   const source = jeu.sources[0];
@@ -25,7 +23,7 @@ export const Jaquette = memo(function Jaquette({ jeu, prioritaire = false, estom
     <span className={`${styles.jaquette} ${className}`} style={style}>
       {jeu.jaquette !== null && !echec ? (
         <img
-          className={`${styles.image} ${estomperSiAbsent && !jeu.installe ? styles.estompee : ''}`}
+          className={styles.image}
           src={jeu.jaquette}
           alt=""
           width={300}

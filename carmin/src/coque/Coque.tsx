@@ -1,27 +1,16 @@
-import {
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Icone, type NomDIcone } from "../composants/Icone";
 import { Sigle } from "../composants/Marque";
 import { PileDAvis } from "../composants/Avis";
 import { coeur } from "../coeur";
 import { useReponse } from "../etat/ressource";
 import { useTexte } from "../i18n/react";
-import { useApplication } from "../etat/application";
-import { NombreAnime } from "../composants/NombreAnime";
-import { formaterNombre } from "../formats";
 import { ACCUEIL, Lien, useRoute, type Route } from "../navigation";
 import { BIBLIOTHEQUE } from "../navigation/routes";
 import { Recents } from "./Recents";
 import { Bandeaux } from "./Bandeaux";
 import { Colonne } from "./Colonne";
 import { Decor } from "./Decor";
-import { installerLEnvol } from "./envol";
 import { ouvrirLaRecherche, RechercheRapide } from "./RechercheRapide";
 import styles from "./Coque.module.css";
 
@@ -52,7 +41,7 @@ function rubriqueDe(route: Route): Rubrique {
   }
 }
 
-/** Une entrée de la barre latérale : une icône et son libellé. L'entrée allumée porte une gélule qui glisse d'une entrée à l'autre. */
+/** Une entrée de la barre latérale : une icône et son libellé. L'entrée ouverte est plus claire, avec un court repère rouge. */
 function Entree({
   vers,
   actif,
@@ -72,93 +61,29 @@ function Entree({
       vers={vers}
       aria-current={actif ? "page" : undefined}
     >
-      <span className={styles.entreeIcone}>
-        <Icone nom={icone} taille={20} />
-      </span>
+      <Icone nom={icone} taille={18} />
       <span className={styles.entreeNom}>{children}</span>
       {pastille}
     </Lien>
   );
 }
 
-/** Au bas de la barre latérale, un seul bouton pour ajouter un jeu : sombre, un « + » rouge. */
+/** Au bas de la barre latérale, le seul bouton de la coque : ajouter un jeu. */
 function BoutonAjout({ actif }: { actif: boolean }) {
   const { t } = useTexte();
   return (
-    <Lien className={`${styles.carteBouton} ${styles.ajoutSeul}`} vers={{ ecran: "ajout" }} aria-current={actif ? "page" : undefined}>
+    <Lien className={styles.ajout} vers={{ ecran: "ajout" }} aria-current={actif ? "page" : undefined}>
       <Icone nom="plus" taille={16} />
-      {t("coque.ajouter")}
+      <span className={styles.entreeNom}>{t("coque.ajouter")}</span>
     </Lien>
   );
 }
 
-/** Deux chiffres de la bibliothèque dans la barre du haut : une icône rouge dans un rond, un nombre. */
-function Medailles({ enJeu }: { enJeu: number | null }) {
-  const { t, langue } = useTexte();
-  const jeux = useApplication((a) => a.jeux);
-  const chiffres = useMemo(() => {
-    if (jeux === null) return null;
-    let minutes = 0;
-    let succes = 0;
-    let installes = 0;
-    for (const jeu of jeux) {
-      if (jeu.masque) continue;
-      minutes += jeu.temps.minutes_total;
-      succes += jeu.succes?.debloques ?? 0;
-      if (jeu.installe) installes += 1;
-    }
-    return { heures: Math.round(minutes / 60), succes, installes };
-  }, [jeux]);
-  if (chiffres === null) return null;
-  const nombre = (n: number) => formaterNombre(n, langue);
-  const liste: {
-    cle: string;
-    icone: NomDIcone;
-    nom: string;
-    valeur: number;
-  }[] = [
-    {
-      cle: "heures",
-      icone: "horloge",
-      nom: t("coque.heures"),
-      valeur: chiffres.heures,
-    },
-    {
-      cle: "succes",
-      icone: "trophee",
-      nom: t("coque.succes"),
-      valeur: chiffres.succes,
-    },
-  ];
-  if (enJeu !== null)
-    liste.push({
-      cle: "en_jeu",
-      icone: "manette",
-      nom: t("coque.en_jeu"),
-      valeur: enJeu,
-    });
-  return (
-    <dl className={styles.medailles} aria-label={t("coque.statistiques")}>
-      {liste.map((m) => (
-        <div key={m.cle} className={styles.medaille} title={m.nom}>
-          <dt className="hors-ecran">{m.nom}</dt>
-          <span className={styles.puceIcone} aria-hidden="true">
-            <Icone nom={m.icone} taille={16} />
-          </span>
-          <dd className="chiffres">
-            <NombreAnime valeur={m.valeur} format={nombre} />
-          </dd>
-        </div>
-      ))}
-    </dl>
-  );
-}
-
 /**
- * Orientation « Carmin » : noir profond et rouge, épurée. À gauche, une barre latérale à libellés
- * (la marque, les écrans, Paramètres et la carte de la collection, sur un voile rouge-rose qui monte du
- * bas) ; au centre, la recherche et la page ; à droite, la colonne des amis en ligne et des jeux joués
- * récemment. Pas de barre d'état : le cadre reste nu, le rouge est la seule lumière.
+ * La coque : à gauche, une barre latérale à libellés (la marque, les écrans, les derniers jeux,
+ * Paramètres et « Ajouter un jeu ») ; au centre, la recherche et la page ; à droite, la colonne des
+ * amis, repliée en un rail de portraits. Dans l'exécutable, le haut de la coque sert aussi de barre de
+ * titre : on déplace la fenêtre par là, et les boutons de Windows sont posés dans son coin droit.
  */
 export function Coque({ children }: { children: ReactNode }) {
   const { t, tp } = useTexte();
@@ -179,24 +104,6 @@ export function Coque({ children }: { children: ReactNode }) {
     page.current?.focus({ preventScroll: true });
   }, [route]);
 
-  useEffect(() => installerLEnvol(), []);
-
-  // La gélule de l'entrée allumée glisse d'une entrée à l'autre, avec un léger rebond.
-  const menu = useRef<HTMLElement>(null);
-  useLayoutEffect(() => {
-    const nav = menu.current;
-    if (nav === null) return;
-    const placer = () => {
-      const actif = nav.querySelector<HTMLElement>('[aria-current="page"]');
-      nav.style.setProperty("--gelule-y", `${actif?.offsetTop ?? 0}px`);
-      nav.style.setProperty("--gelule-h", `${actif?.offsetHeight ?? 0}px`);
-      nav.toggleAttribute("data-sans-gelule", actif === null);
-    };
-    placer();
-    const observateur = new ResizeObserver(placer);
-    observateur.observe(nav);
-    return () => observateur.disconnect();
-  }, [rubrique]);
 
   // La colonne des amis se replie en un rail de portraits ; le choix est gardé d'une visite à l'autre.
   const [replie, setReplie] = useState(() => {
@@ -239,7 +146,7 @@ export function Coque({ children }: { children: ReactNode }) {
       <div className={styles.application} data-colonne-repliee={replie ? "" : undefined}>
         <aside className={styles.laterale}>
           <Lien
-            className={styles.marque}
+            className={`${styles.marque} hors-poignee`}
             vers={ACCUEIL}
             aria-label={t("app.nom")}
           >
@@ -248,12 +155,7 @@ export function Coque({ children }: { children: ReactNode }) {
               {t("app.nom")}
             </span>
           </Lien>
-          <nav
-            ref={menu}
-            className={styles.menu}
-            aria-label={t("coque.navigation")}
-          >
-            <span className={styles.indicateur} aria-hidden="true" />
+          <nav className={styles.menu} aria-label={t("coque.navigation")}>
             <Entree
               vers={ACCUEIL}
               actif={rubrique === "accueil"}
@@ -320,18 +222,15 @@ export function Coque({ children }: { children: ReactNode }) {
         <header className={styles.barre} data-defile={defile ? "" : undefined}>
           <button
             type="button"
-            className={styles.recherche}
+            className={`${styles.recherche} hors-poignee`}
             onClick={ouvrirLaRecherche}
           >
-            <Icone nom="recherche" taille={18} />
+            <Icone nom="recherche" taille={16} />
             <span className={styles.rechercheTexte}>
               {t("recherche.champ")}
             </span>
             <kbd className={styles.raccourci}>{t("coque.raccourci")}</kbd>
           </button>
-          <div className={styles.outils}>
-            <Medailles enJeu={null} />
-          </div>
         </header>
 
         <main
@@ -352,13 +251,13 @@ export function Coque({ children }: { children: ReactNode }) {
         />
         <button
           type="button"
-          className={styles.languette}
+          className={`${styles.languette} hors-poignee`}
           onClick={basculerColonne}
           aria-expanded={!replie}
           aria-label={replie ? t("carmin.colonne.deplier") : t("carmin.colonne.replier")}
           title={replie ? t("carmin.colonne.deplier") : t("carmin.colonne.replier")}
         >
-          <Icone nom="chevron_droit" taille={14} />
+          <Icone nom="chevron_droit" taille={12} />
         </button>
       </div>
       <RechercheRapide />

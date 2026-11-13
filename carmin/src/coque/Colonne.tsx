@@ -2,7 +2,6 @@ import { useMemo, type CSSProperties } from 'react';
 import type { Ami, JeuResume, Profil } from '../../contrat/types';
 import { Icone } from '../composants/Icone';
 import { Jaquette } from '../composants/Jaquette';
-import { aReprendre } from '../bibliotheque/logique';
 import { useApplication } from '../etat/application';
 import { formaterPourcentage, formaterTempsDeJeu } from '../formats';
 import { useTexte } from '../i18n/react';
@@ -14,14 +13,14 @@ import styles from './Colonne.module.css';
 const AMIS_MONTRES = 5;
 const JEUX_MONTRES = 3;
 
-/** Un ami en ligne : son portrait, son pseudo, et le jeu auquel il joue dans une pastille. */
+/** Un ami en ligne : son portrait, son pseudo, et le jeu auquel il joue. */
 function Personne({ ami }: { ami: Ami }) {
   const { t } = useTexte();
   const jeu = ami.statut === 'en_jeu' ? ami.jeu_en_cours : null;
   const contenu = (
     <>
       <span className={styles.portrait} data-statut={ami.statut}>
-        <Avatar image={ami.avatar} pseudo={ami.pseudo} taille={40} />
+        <Avatar image={ami.avatar} pseudo={ami.pseudo} taille={36} />
       </span>
       <span className={styles.texte}>
         <span className={styles.pseudo}>{ami.pseudo}</span>
@@ -94,8 +93,8 @@ function JeuRecent({ jeu }: { jeu: JeuResume }) {
 }
 
 /**
- * La colonne de droite (référence « Gameverse ») : le profil, les amis en ligne (ceux qui jouent
- * d'abord, leur jeu dans une pastille), puis les jeux joués récemment avec leur progression.
+ * La colonne de droite : le profil, les amis en ligne (ceux qui jouent d'abord, avec leur jeu),
+ * puis les jeux dont il reste le moins de succès à débloquer.
  * Sur l'écran Amis, `amis` vaut null : la liste complète est déjà au centre.
  */
 export function Colonne({
@@ -123,14 +122,13 @@ export function Colonne({
 
   return (
     <aside className={styles.colonne} aria-label={t('colonne.nom')} data-replie={replie ? '' : undefined}>
-      <div className={styles.tete}>
-      <Lien className={styles.profil} vers={{ ecran: 'profil' }} aria-label={pseudo === null ? t('coque.profil') : t('coque.profil_de', { pseudo })}>
+      <Lien className={styles.profil} vers={{ ecran: 'profil' }} aria-label={pseudo === null ? t('coque.profil') : t('coque.profil_de', { pseudo })} title={pseudo ?? t('coque.profil')}>
         <span className={styles.profilAvatar}>
           {profil?.avatar != null ? (
-            <img src={profil.avatar} alt="" width={44} height={44} />
+            <img src={profil.avatar} alt="" width={40} height={40} />
           ) : (
             <span className={styles.profilVide}>
-              <Icone nom="utilisateur" taille={20} />
+              <Icone nom="utilisateur" taille={18} />
             </span>
           )}
         </span>
@@ -138,9 +136,7 @@ export function Colonne({
           <span className={styles.pseudo}>{pseudo ?? t('coque.profil')}</span>
           <span className={styles.statut}>{t('amis.statut.en_ligne')}</span>
         </span>
-        <Icone nom="chevron_droit" taille={16} />
       </Lien>
-      </div>
 
       {connectes !== null && (
         <section className={styles.groupe} aria-labelledby="colonne-amis">
@@ -151,7 +147,7 @@ export function Colonne({
           {connectes.length === 0 ? (
             <p className={styles.vide}>{t('colonne.personne')}</p>
           ) : (
-            <ul className={`cascade ${styles.liste}`}>
+            <ul className={styles.liste}>
               {connectes.slice(0, AMIS_MONTRES).map((ami) => (
                 <Personne key={ami.steamid} ami={ami} />
               ))}
@@ -160,7 +156,7 @@ export function Colonne({
           {tousLesAmis > 0 && (
             <Lien className={styles.tous} vers={{ ecran: 'amis' }}>
               {tp('panneau_amis.tous', tousLesAmis)}
-              <Icone nom="chevron_droit" taille={16} />
+              <Icone nom="chevron_droit" taille={14} />
             </Lien>
           )}
         </section>
@@ -171,7 +167,7 @@ export function Colonne({
           <h2 id="colonne-portee" className={styles.titreGroupe}>
             {t('carmin.portee.titre')}
           </h2>
-          <ul className={`cascade ${styles.liste}`}>
+          <ul className={styles.liste}>
             {aPortee.map((jeu) => (
               <JeuRecent key={jeu.id} jeu={jeu} />
             ))}

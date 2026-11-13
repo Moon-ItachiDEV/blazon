@@ -1,950 +1,319 @@
 /*
- * Profil, façon carte de joueur esport : bannière de jaquettes qui défile, avatar à l'anneau néon,
- * médailles hexagonales, podium, anneau des sources, frise de l'activité.
- * Tout ce qui bouge passe par transform et opacity (les arcs SVG, minuscules, exceptés).
+ * Le profil : qui joue, sa bibliothèque en chiffres, ses jeux les plus joués, ses sources et ses
+ * derniers lancements. Du texte, des jaquettes et des barres fines ; aucun cadre, aucune couleur d'accent.
  */
 
-/* ── Carte de joueur */
-.carteJoueur {
-  position: relative;
-  isolation: isolate;
-  display: flex;
-  align-items: center;
-  gap: var(--e8);
-  min-height: 248px;
-  margin-bottom: var(--e8);
-  padding: var(--e8) var(--e10);
-  overflow: hidden;
-  border-radius: var(--rayon-xl);
-  background: var(--surface-1);
-  box-shadow:
-    var(--ombre-carte),
-    inset 0 0 0 1px rgb(255 255 255 / 0.08);
-}
-
-/* Le liseré au dégradé de la carte. */
-.carteJoueur::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  border-radius: inherit;
-  padding: 1px;
-  background: linear-gradient(120deg, color-mix(in srgb, #a3102f 80%, transparent), transparent 35%, transparent 65%, color-mix(in srgb, #ff3f86 80%, transparent));
-  mask:
-    linear-gradient(black 0 0) content-box,
-    linear-gradient(black 0 0);
-  mask-composite: exclude;
-  pointer-events: none;
-}
-
-/* La bannière : les jaquettes des jeux les plus joués, qui défilent lentement de droite à gauche. */
-.banniere {
-  position: absolute;
-  inset: 0;
-  z-index: -2;
-  overflow: hidden;
-}
-
-.defile {
-  display: flex;
-  gap: 6px;
-  width: max-content;
-  height: 100%;
-  will-change: transform;
-  animation: defiler calc(var(--nombre) * 7s) linear infinite;
-  animation-play-state: var(--lecture-ambiance);
-}
-
-@keyframes defiler {
-  to {
-    /* La moitié de la piste, plus la moitié d'un écart : la boucle est sans couture. */
-    transform: translateX(calc(-50% - 3px));
-  }
-}
-
-.affichette {
-  flex: none;
-  height: 100%;
-  aspect-ratio: 2 / 3;
-  overflow: hidden;
-  transform: skewX(-8deg);
-  border-radius: var(--rayon-s);
-}
-
-.affichette img {
-  width: 100%;
-  height: 100%;
-  max-width: none;
-  object-fit: cover;
-  transform: skewX(8deg) scale(1.2);
-}
-
-/* Le voile : sombre derrière l'identité, la bannière visible à droite, teinté du dégradé en bas. */
-.voileJoueur {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background:
-    linear-gradient(90deg, color-mix(in srgb, var(--fond) 97%, transparent) 0%, color-mix(in srgb, var(--fond) 90%, transparent) 46%, color-mix(in srgb, var(--fond) 55%, transparent) 72%, color-mix(in srgb, var(--fond) 82%, transparent) 100%),
-    radial-gradient(60% 120% at 12% 100%, color-mix(in srgb, #a3102f 35%, transparent), transparent 70%),
-    radial-gradient(50% 120% at 90% 0%, color-mix(in srgb, #ff3f86 22%, transparent), transparent 70%);
-}
-
-/* L'avatar dans son anneau néon : un dégradé conique qui tourne lentement, et son halo. */
-.anneau {
-  position: relative;
-  flex: none;
-  display: grid;
-  place-items: center;
-  width: 152px;
-  height: 152px;
-  border-radius: 50%;
-  animation: surgirAvatar calc(var(--duree-longue) * 1.3) var(--courbe-ressort) backwards;
-}
-
-.anneau::before,
-.anneau::after {
-  content: '';
-  position: absolute;
-  border-radius: 50%;
-  background: conic-gradient(from 0deg, #a3102f, #e3173f, #ff3f86, #ff8fb3, #a3102f);
-  animation: tourner calc(var(--duree-ambiance) / 2) linear infinite;
-  animation-play-state: var(--lecture-ambiance);
-}
-
-.anneau::before {
-  inset: 0;
-  mask: radial-gradient(farthest-side, transparent calc(100% - 4px), black calc(100% - 3px));
-}
-
-/* Le halo : le même anneau, flou, derrière. Le flou est posé une fois ; seule la rotation l'anime. */
-.anneau::after {
-  inset: 6px;
-  z-index: -1;
-  filter: blur(18px);
-  opacity: 0.75;
-}
-
-.anneau > * {
-  position: relative;
-  box-shadow: 0 0 0 5px var(--surface-1);
-}
-
-@keyframes tourner {
-  to {
-    transform: rotate(1turn);
-  }
-}
-
-@keyframes surgirAvatar {
-  from {
-    opacity: 0;
-    transform: scale(0.6) rotate(-20deg);
-  }
-}
+/* ---------- Le joueur ---------- */
 
 .identite {
-  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--e5);
   min-width: 0;
+}
+
+.identiteTexte {
   display: flex;
   flex-direction: column;
-  gap: var(--e2);
-  animation: monter var(--duree-longue) var(--courbe) backwards;
-  animation-delay: calc(var(--pas-cascade) * 2);
+  gap: 2px;
+  min-width: 0;
 }
 
-.pilules {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--e2);
-}
-
-.pilule {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 26px;
-  padding: 0 12px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--texte);
-  background: rgb(255 255 255 / 0.08);
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.14);
-}
-
-.enLigne {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--succes);
-  box-shadow: 0 0 8px var(--succes);
-}
-
-.pseudo {
+.pseudo,
+.pseudoAbsent {
+  overflow: hidden;
   font-family: var(--police-titre);
-  font-size: calc(clamp(34px, 3.6vw, 52px) * var(--echelle-titre));
-  line-height: 1.1;
-  font-weight: 300;
-  overflow-wrap: anywhere;
-  text-shadow: 0 0 40px color-mix(in srgb, var(--accent) 45%, transparent);
+  font-size: 26px;
+  line-height: 34px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .pseudoAbsent {
-  font-size: 20px;
+  color: var(--texte-3);
+  font-weight: 400;
+}
+
+.compte {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  color: var(--texte-3);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.compte > * + *::before {
+  content: '·' / '';
+  margin: 0 8px;
   color: var(--texte-3);
 }
 
 .changer {
-  align-self: flex-start;
-  margin-left: calc(var(--e3) * -1);
+  color: var(--texte-2);
+  border-radius: var(--rayon-s);
+  transition: color var(--duree-courte) var(--courbe);
 }
 
-/* La bibliothèque explorée : un cadran au dégradé, à droite de la carte. */
-.exploree {
-  flex: none;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: var(--e4) var(--e5);
-  border-radius: var(--rayon-l);
-  background: color-mix(in srgb, var(--fond) 55%, transparent);
-  -webkit-backdrop-filter: blur(18px) saturate(1.2);
-  backdrop-filter: blur(18px) saturate(1.2);
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.12);
-  text-align: center;
-  animation: monter var(--duree-longue) var(--courbe) backwards;
-  animation-delay: calc(var(--pas-cascade) * 4);
-}
-
-.exploreeTitre {
-  margin-top: var(--e2);
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.exploreeDetail {
-  font-size: 12px;
-  color: var(--texte-3);
-}
-
-.cadran {
-  position: relative;
-}
-
-.cadran svg,
-.anneauSources svg {
-  display: block;
-  width: 100%;
-  height: 100%;
-  transform: rotate(-90deg);
-}
-
-.cadranPiste {
-  fill: none;
-  stroke: rgb(255 255 255 / 0.08);
-  stroke-width: 9;
-}
-
-.cadranPlein {
-  fill: none;
-  stroke-width: 9;
-  stroke-linecap: round;
-  stroke-dasharray: var(--part) 100;
-  animation: tracerArc calc(var(--duree-longue) * 2.2) var(--courbe) backwards;
-  animation-delay: calc(var(--pas-cascade) * 5);
-  filter: drop-shadow(0 0 6px rgb(255 63 134 / 0.5));
-}
-
-@keyframes tracerArc {
-  from {
-    stroke-dasharray: 0 100;
-  }
-}
-
-.cadranCentre {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-}
-
-.cadranValeur {
-  font-family: var(--police-titre);
-  font-size: 26px;
-  font-weight: 500;
-}
-
-@media (max-width: 1100px) {
-  .carteJoueur {
-    gap: var(--e6);
-    padding: var(--e6);
-  }
-}
-
-@media (max-width: 760px) {
-  .carteJoueur {
-    flex-wrap: wrap;
-  }
-  .exploree {
-    flex: 1 1 100%;
-  }
+.changer:hover {
+  color: var(--texte);
 }
 
 .notes {
   display: flex;
   flex-direction: column;
   gap: var(--e2);
-  margin-bottom: var(--e8);
+  margin-top: var(--e5);
 }
 
 .notes:empty {
   display: none;
 }
 
-.titreDeSection {
-  margin-bottom: var(--e4);
-}
+/* ---------- Les chiffres : la valeur, puis son libellé ---------- */
 
 .bloc {
-  margin-bottom: var(--e10);
+  margin-top: var(--e8);
+}
+
+.chiffres {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 190px), 1fr));
+  gap: var(--e6) var(--e8);
+  padding: var(--e6) 0;
+  border-block: 1px solid var(--filet);
+}
+
+.chiffre {
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.chiffre dd {
+  font-family: var(--police-titre);
+  font-size: 28px;
+  line-height: 36px;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.chiffre dt {
+  color: var(--texte-3);
+  font-size: 13px;
+  line-height: 19px;
 }
 
 .discret {
   margin-top: var(--e3);
   color: var(--texte-3);
-  font-size: 14px;
+  font-size: 13px;
+  line-height: 19px;
 }
 
-/* ── Médailles rondes (Carmin : le cercle remplace l'hexagone) */
-.medailles {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--e5);
-}
+/* ---------- Les colonnes : les plus joués ; les deux dernières semaines et les sources ---------- */
 
-@media (min-width: 1900px) {
-  .medailles[data-nombre='8'],
-  .medailles[data-nombre='7'] {
-    grid-template-columns: repeat(8, minmax(0, 1fr));
-  }
-}
-
-.medaille {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  padding: var(--e6) var(--e3) var(--e5);
-  border-radius: var(--rayon-l);
-  background: var(--panneau);
-  box-shadow: var(--arete);
-  text-align: center;
-  transform: perspective(700px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
-  transition:
-    transform var(--duree) var(--courbe),
-    box-shadow var(--duree) var(--courbe);
-  animation: monter var(--duree-longue) var(--courbe) backwards;
-  animation-delay: calc(var(--rang, 0) * var(--pas-cascade) + var(--pas-cascade) * 3);
-}
-
-.medaille:hover {
-  box-shadow:
-    var(--arete),
-    inset 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent),
-    0 14px 36px color-mix(in srgb, var(--accent-2) 22%, transparent);
-}
-
-.hexagone {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: 68px;
-  height: 76px;
-  margin-bottom: var(--e2);
-  transition: transform var(--duree) var(--courbe-ressort);
-}
-
-.medaille:hover .hexagone {
-  transform: translateY(-3px) scale(1.06);
-}
-
-.hexagone > svg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-}
-
-.hexFond {
-  fill: color-mix(in srgb, #a3102f 16%, transparent);
-}
-
-/* Le contour se trace en arrivant : un trait de longueur 1 qui découvre son tour. */
-.hexTrait {
-  fill: none;
-  stroke-width: 3;
-  stroke-linecap: round;
-  stroke-dasharray: 1;
-  filter: drop-shadow(0 0 5px rgb(227 23 63 / 0.7));
-  animation: tracerHex calc(var(--duree-longue) * 1.8) var(--courbe) backwards;
-  animation-delay: calc(var(--rang, 0) * var(--pas-cascade) + var(--pas-cascade) * 5);
-}
-
-@keyframes tracerHex {
-  from {
-    stroke-dashoffset: 1;
-  }
-}
-
-.hexInterieur {
-  fill: none;
-  stroke: rgb(255 255 255 / 0.12);
-  stroke-width: 1.5;
-}
-
-.hexIcone {
-  position: relative;
-  display: grid;
-  place-items: center;
-  color: var(--texte);
-  animation: surgirIcone var(--duree-longue) var(--courbe-ressort) backwards;
-  animation-delay: calc(var(--rang, 0) * var(--pas-cascade) + var(--pas-cascade) * 9);
-}
-
-@keyframes surgirIcone {
-  from {
-    opacity: 0;
-    transform: scale(0.3) rotate(-30deg);
-  }
-}
-
-.medailleValeur {
-  order: 1;
-  font-family: var(--police-titre);
-  font-size: calc(clamp(20px, 1.75vw, 26px) * var(--echelle-titre));
-  line-height: 1.2;
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-.medailleLibelle {
-  order: 2;
-  font-size: 12px;
-  line-height: 16px;
-  color: var(--texte-3);
-  text-wrap: balance;
-}
-
-/* ── Plus joués et sources */
 .colonnes {
-  display: grid;
-  grid-template-columns: minmax(0, 1.75fr) minmax(280px, 1fr);
-  gap: var(--e4);
-  margin-bottom: var(--e10);
-}
-
-@media (max-width: 900px) {
-  .colonnes {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-.panneau {
-  min-width: 0;
-  padding: var(--e6);
-  border-radius: var(--rayon-xl);
-  background: var(--panneau);
-  box-shadow: var(--arete), inset 0 0 0 1px var(--trait);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--e8) var(--e14);
+  margin-top: var(--e8);
 }
 
 .principale {
+  flex: 999 1 460px;
   min-width: 0;
 }
 
 .laterale {
+  flex: 1 1 320px;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--e4);
+  gap: var(--e8);
 }
 
-.laterale > .panneau:last-child {
-  flex: 1;
-}
-
-/* Le podium : 2, 1, 3. Le socle de chaque marche monte du sol à sa hauteur. */
-.podium {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  align-items: end;
-  gap: var(--e4);
-  padding-top: var(--e4);
-}
-
-.marche[data-rang='1'] {
-  order: 2;
-  --hauteur-socle: 86px;
-  --largeur-jaquette: 72%;
-  --delai-podium: 10;
-}
-
-.marche[data-rang='2'] {
-  order: 1;
-  --hauteur-socle: 58px;
-  --largeur-jaquette: 60%;
-  --delai-podium: 7;
-}
-
-.marche[data-rang='3'] {
-  order: 3;
-  --hauteur-socle: 40px;
-  --largeur-jaquette: 56%;
-  --delai-podium: 5;
-}
-
-.lienPodium {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  text-align: center;
-  border-radius: var(--rayon-l);
-}
-
-.couronne {
-  position: relative;
-  display: block;
-  width: var(--largeur-jaquette);
+.titreDeSection {
   margin-bottom: var(--e3);
-  animation: poserPodium calc(var(--duree-longue) * 1.4) var(--courbe-ressort) backwards;
-  animation-delay: calc(var(--pas-cascade) * var(--delai-podium, 6));
-  transition: transform var(--duree) var(--courbe-ressort);
 }
 
-@keyframes poserPodium {
-  from {
-    opacity: 0;
-    transform: translateY(-36px) scale(0.85);
-  }
-}
-
-.lienPodium:hover .couronne {
-  transform: translateY(-6px) rotate(-1.5deg);
-}
-
-.jaquettePodium {
-  box-shadow:
-    0 18px 40px rgb(0 0 0 / 0.55),
-    0 0 0 1px rgb(255 255 255 / 0.14);
-}
-
-.marche[data-rang='1'] .jaquettePodium {
-  box-shadow:
-    0 18px 40px rgb(0 0 0 / 0.55),
-    0 0 0 2px #e3173f,
-    0 0 34px rgb(255 63 134 / 0.45);
-}
-
-/* Le halo du premier : une lumière au dégradé qui tourne derrière sa jaquette. */
-.halo {
-  position: absolute;
-  inset: -18%;
-  z-index: -1;
-  border-radius: 50%;
-  background: conic-gradient(from 0deg, transparent, rgb(227 23 63 / 0.55), transparent 40%, rgb(255 63 134 / 0.5), transparent 75%);
-  filter: blur(22px);
-  animation: tourner calc(var(--duree-ambiance) / 2) linear infinite;
-  animation-play-state: var(--lecture-ambiance);
-}
-
-.titrePodium {
-  max-width: 100%;
-  font-weight: 500;
-  font-size: 15px;
-  line-height: 20px;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
-}
-
-.tempsPodium {
-  font-family: var(--police-titre);
-  font-size: 20px;
-  font-weight: 500;
-  background: var(--degrade);
-  background-clip: text;
-  color: transparent;
-}
-
-.partPodium {
-  font-size: 12px;
-  color: var(--texte-3);
-}
-
-.socle {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: 100%;
-  height: var(--hauteur-socle);
-  margin-top: var(--e3);
-  border-radius: var(--rayon-m) var(--rayon-m) 4px 4px;
-  background: linear-gradient(180deg, rgb(255 255 255 / 0.12), rgb(255 255 255 / 0.02));
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2);
-  transform-origin: bottom;
-  animation: monterSocle calc(var(--duree-longue) * 1.2) var(--courbe) backwards;
-  animation-delay: calc(var(--pas-cascade) * 4);
-}
-
-.marche[data-rang='1'] .socle {
-  background: linear-gradient(180deg, color-mix(in srgb, #e3173f 55%, transparent), color-mix(in srgb, #a3102f 10%, transparent));
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.35),
-    0 -6px 30px color-mix(in srgb, #ff3f86 25%, transparent);
-}
-
-@keyframes monterSocle {
-  from {
-    transform: scaleY(0);
-  }
-}
-
-.numero {
-  font-family: var(--police-titre);
-  font-size: 30px;
-  font-weight: 500;
-  color: var(--texte);
-  opacity: 0.9;
-}
-
-/* Les suivants : de grandes barres animées, jaquette en tête. */
-.barres {
+.lignes {
   display: flex;
   flex-direction: column;
-  gap: var(--e1);
-  margin-top: var(--e4);
+  gap: 2px;
+  margin: 0 calc(var(--e3) * -1);
 }
 
-.barres > li {
-  animation: monter var(--duree-longue) var(--courbe) backwards;
-  animation-delay: calc(var(--rang, 0) * var(--pas-cascade) + var(--pas-cascade) * 8);
-}
-
-.ligneBarre {
+.ligne {
   display: flex;
   align-items: center;
-  gap: var(--e3);
-  padding: var(--e2) var(--e3);
+  gap: var(--e4);
+  min-height: 68px;
+  padding: 6px var(--e3);
   border-radius: var(--rayon-m);
-  transition:
-    background-color var(--duree-courte) var(--courbe),
-    transform var(--duree) var(--courbe);
+  transition: background-color var(--duree-courte) var(--courbe);
 }
 
-.ligneBarre:hover {
+.ligne:hover {
   background: var(--survol);
-  transform: translateX(4px);
 }
 
-.rangBarre {
+.rang {
   flex: none;
-  width: 22px;
+  width: 18px;
+  color: var(--texte-3);
+  font-size: 13px;
   text-align: center;
-  font-family: var(--police-titre);
-  font-weight: 500;
-  color: var(--accent);
 }
 
 .miniature {
   flex: none;
   width: 36px;
-  border-radius: 8px;
+  border-radius: 6px;
 }
 
-.barreCorps {
+.ligneCorps {
   flex: 1;
-  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 10px;
+  min-width: 0;
 }
 
-.barreHaut {
+.ligneHaut {
   display: flex;
   align-items: baseline;
-  gap: var(--e3);
+  justify-content: space-between;
+  gap: var(--e4);
 }
 
-.titreDuJeu {
-  flex: 1;
-  min-width: 0;
-  font-weight: 500;
-  font-size: 14px;
-  white-space: nowrap;
+.ligneNom {
   overflow: hidden;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+  white-space: nowrap;
   text-overflow: ellipsis;
 }
 
-.temps {
+.ligneValeur {
   flex: none;
-  font-size: 13px;
-  font-weight: 500;
   color: var(--texte-2);
+  font-size: 13px;
+  line-height: 20px;
 }
 
+/* Une barre compare, elle ne mesure pas un but : elle reste neutre. */
 .piste {
   display: block;
-  height: 6px;
-  border-radius: 999px;
-  background: rgb(255 255 255 / 0.07);
+  height: 3px;
+  border-radius: 3px;
+  background: rgb(255 255 255 / 0.08);
+  overflow: hidden;
 }
 
 .barre {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: var(--degrade);
-  box-shadow: 0 0 12px color-mix(in srgb, var(--accent-2) 40%, transparent);
-  transform-origin: left;
-  animation: remplir calc(var(--duree-longue) * 1.6) var(--courbe) backwards;
-  animation-delay: calc(var(--rang, 0) * var(--pas-cascade) + var(--pas-cascade) * 10);
+  background: rgb(255 255 255 / 0.56);
 }
 
-/* L'anneau des sources et sa légende. */
-.sourcesCorps {
+/* ---------- Par source ---------- */
+
+.sources {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: var(--e5);
-}
-
-.anneauSources {
-  position: relative;
-  width: 190px;
-  height: 190px;
-  margin-top: var(--e2);
-}
-
-.arc {
-  fill: none;
-  stroke-width: 12;
-  stroke-dasharray: var(--part) 100;
-  transform-origin: 60px 60px;
-  transform: rotate(var(--debut));
-  filter: drop-shadow(0 0 5px rgb(255 90 130 / 0.45));
-  animation: tracerArc calc(var(--duree-longue) * 1.8) var(--courbe) backwards;
-  animation-delay: calc(var(--rang, 0) * var(--pas-cascade) * 2 + var(--pas-cascade) * 6);
-}
-
-.anneauCentre {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-.anneauNombre {
-  font-family: var(--police-titre);
-  font-size: 34px;
-  line-height: 1.1;
-  font-weight: 500;
-}
-
-.anneauLibelle {
-  font-size: 13px;
-  color: var(--texte-3);
-}
-
-.legende {
-  align-self: stretch;
-  display: flex;
-  flex-direction: column;
+  gap: var(--e4);
 }
 
 .source {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--e3);
-  padding: 10px var(--e1);
-}
-
-.source + .source {
-  border-top: 1px solid rgb(255 255 255 / 0.06);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px var(--e4);
+  align-items: baseline;
 }
 
 .source dt {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--texte-2);
-}
-
-.pastille {
-  width: 10px;
-  height: 10px;
-  border-radius: 3px;
-  background: var(--couleur-source);
-  box-shadow: 0 0 10px var(--couleur-source);
+  overflow: hidden;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .source dd {
-  display: flex;
-  align-items: baseline;
-  gap: var(--e2);
-  font-weight: 500;
-}
-
-.partSource {
-  min-width: 52px;
-  text-align: right;
-  font-size: 12px;
-  font-weight: 400;
-  color: var(--texte-3);
-}
-
-/* ── Frise de l'activité récente */
-.frise {
-  position: relative;
-  overflow-x: auto;
-  margin: 0 calc(var(--e2) * -1);
-  padding: 0 var(--e2) var(--e2);
-  scrollbar-width: none;
-}
-
-/* Le fil du temps : un trait au dégradé qui se tire de gauche à droite, à hauteur des jalons. */
-.fil {
-  position: absolute;
-  left: var(--e2);
-  right: var(--e2);
-  top: var(--hauteur-jalon, 158px);
-  height: 2px;
-  border-radius: 2px;
-  background: linear-gradient(90deg, #a3102f, #e3173f 50%, #ff3f86, transparent);
-  box-shadow: 0 0 12px rgb(227 23 63 / 0.6);
-  transform-origin: left;
-  animation: remplir calc(var(--duree-longue) * 2.4) var(--courbe) backwards;
-  animation-delay: calc(var(--pas-cascade) * 4);
-}
-
-.etapes {
-  display: grid;
-  grid-template-columns: repeat(8, minmax(108px, 1fr));
-  gap: var(--e3);
-}
-
-.etape {
-  min-width: 0;
-  animation: monter var(--duree-longue) var(--courbe) backwards;
-  animation-delay: calc(var(--rang, 0) * var(--pas-cascade) + var(--pas-cascade) * 5);
-}
-
-.lienEtape {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  text-align: center;
-  border-radius: var(--rayon-m);
-}
-
-.jaquetteEtape {
-  width: 92px;
-  box-shadow:
-    0 12px 26px rgb(0 0 0 / 0.5),
-    0 0 0 1px rgb(255 255 255 / 0.12);
-  transition: transform var(--duree) var(--courbe-ressort);
-}
-
-.lienEtape:hover .jaquetteEtape {
-  transform: translateY(-6px) rotate(-2deg);
-}
-
-/* Le jalon : un point lumineux sur le fil, qui grossit au survol. */
-.jalon {
-  width: 14px;
-  height: 14px;
-  margin: 13px 0 10px;
-  border-radius: 50%;
-  background: var(--fond);
-  box-shadow:
-    inset 0 0 0 3px var(--accent),
-    0 0 12px var(--accent);
-  animation: surgirIcone var(--duree-longue) var(--courbe-ressort) backwards;
-  animation-delay: calc(var(--rang, 0) * var(--pas-cascade) * 1.5 + var(--pas-cascade) * 8);
-  transition: transform var(--duree) var(--courbe-ressort);
-}
-
-.etape:first-child .jalon {
-  background: var(--accent-2);
-  box-shadow:
-    inset 0 0 0 3px var(--gemme),
-    0 0 18px var(--accent-2);
-}
-
-.lienEtape:hover .jalon {
-  transform: scale(1.4);
-}
-
-.quand {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--accent);
+  color: var(--texte-2);
+  font-size: 13px;
+  line-height: 20px;
   white-space: nowrap;
 }
 
-.titreEtape {
-  max-width: 100%;
-  font-size: 13px;
-  line-height: 17px;
-  font-weight: 500;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
+.source .piste {
+  grid-column: 1 / -1;
 }
 
-.totalEtape {
-  font-size: 12px;
+.partSource {
+  display: inline-block;
+  min-width: 44px;
+  margin-left: var(--e2);
   color: var(--texte-3);
+  text-align: right;
 }
 
-/* Copies locales : les modules CSS renomment les animations, celles de base.css n'y sont pas visibles. */
-@keyframes monter {
-  from {
-    opacity: 0;
-    transform: translateY(22px) scale(0.985);
+/* ---------- Activité récente : une rangée de jaquettes ---------- */
+
+.activite {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 112px), 1fr));
+  gap: var(--e6) var(--e5);
+}
+
+.etape {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border-radius: var(--rayon-m);
+}
+
+.etapeJaquette {
+  margin-bottom: var(--e3);
+  border-radius: var(--rayon-m);
+  transition: transform var(--duree) var(--courbe);
+}
+
+@media (hover: hover) {
+  .etape:hover .etapeJaquette {
+    transform: translateY(-4px);
   }
 }
 
-@keyframes remplir {
-  from {
-    transform: scaleX(0);
-  }
+.etapeTitre {
+  overflow: hidden;
+  color: var(--texte-2);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  transition: color var(--duree-courte) var(--courbe);
 }
 
-/* Audit : huit anneaux rouges lumineux côte à côte écrasaient la hiérarchie. Au repos, l'anneau est discret ;
- * il s'allume au survol, et le chiffre redevient l'élément le plus fort de la carte. */
-.hexFond {
-  fill: rgb(255 255 255 / 0.035);
+.etape:hover .etapeTitre {
+  color: var(--texte);
 }
-.hexTrait {
-  stroke-width: 2;
-  opacity: 0.45;
-  filter: none;
-  transition: opacity var(--duree) var(--courbe), filter var(--duree) var(--courbe);
-}
-.medaille:hover .hexTrait {
-  opacity: 1;
-  filter: drop-shadow(0 0 5px rgb(227 23 63 / 0.6));
-}
-.hexIcone {
-  color: var(--texte-2, rgb(255 255 255 / 0.78));
+
+.etapeDetail {
+  overflow: hidden;
+  color: var(--texte-3);
+  font-size: 12px;
+  line-height: 18px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }

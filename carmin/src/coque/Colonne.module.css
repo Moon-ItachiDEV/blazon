@@ -1,7 +1,7 @@
 /*
- * La colonne de droite : le profil, les amis en ligne, les jeux joués récemment. Elle reste en place
- * quand la page défile. Un aplat noir, sans flou : devant le fond vivant, un flou serait recalculé
- * à chaque image.
+ * La colonne de droite : le profil, les amis en ligne, les jeux presque finis. Elle reste en place
+ * quand la page défile. Repliée (son état par défaut), elle ne garde que les portraits et les jaquettes.
+ * Dans l'exécutable, les boutons de Windows sont posés sur son coin haut : elle commence dessous.
  */
 .colonne {
   position: sticky;
@@ -9,11 +9,13 @@
   height: 100vh;
   display: flex;
   flex-direction: column;
-  gap: var(--e8);
-  padding: var(--e4) var(--e5) var(--e6);
+  gap: var(--e6);
+  padding: calc(var(--haut-fenetre) + var(--e3)) var(--e4) var(--e5);
   overflow: hidden auto;
   scrollbar-width: none;
-  background: color-mix(in srgb, var(--fond) 94%, transparent);
+  /* Un filet à gauche, qui s'éteint vers le haut. */
+  border-left: 1px solid transparent;
+  border-image: linear-gradient(180deg, transparent, var(--filet) 120px) 1;
   view-transition-name: colonne;
 }
 
@@ -23,46 +25,36 @@
   }
 }
 
-/* ---------- Le profil, à hauteur de la barre du haut ---------- */
+/* ---------- Le profil, à hauteur de la recherche ---------- */
 
 .profil {
   flex: none;
   display: flex;
   align-items: center;
   gap: var(--e3);
-  min-height: 48px;
-  padding: var(--e1) var(--e2) var(--e1) var(--e1);
+  min-height: 40px;
   border-radius: 999px;
-  color: var(--texte-3);
-  transition: background var(--duree) var(--courbe);
-}
-
-.profil:hover {
-  background: var(--survol);
+  -webkit-app-region: no-drag;
 }
 
 .profilAvatar {
   flex: none;
   display: block;
-  padding: 2px;
   border-radius: 50%;
-  background: var(--degrade);
-  box-shadow: 0 0 18px color-mix(in srgb, var(--ecarlate) 45%, transparent);
-  transition: transform var(--duree) var(--courbe-ressort);
+  transition: opacity var(--duree-courte) var(--courbe);
 }
 
 .profil:hover .profilAvatar {
-  transform: scale(1.06);
+  opacity: 0.85;
 }
 
 .profilAvatar img,
 .profilVide {
-  width: 42px;
-  height: 42px;
+  width: 40px;
+  height: 40px;
   display: grid;
   place-items: center;
   border-radius: 50%;
-  border: 2px solid var(--fond);
   background: var(--surface-2);
   object-fit: cover;
   color: var(--texte-2);
@@ -71,8 +63,7 @@
 .statut {
   font-size: 12px;
   line-height: 18px;
-  letter-spacing: 0.03em;
-  color: var(--succes);
+  color: var(--texte-3);
 }
 
 /* ---------- Les groupes ---------- */
@@ -81,7 +72,7 @@
   flex: none;
   display: flex;
   flex-direction: column;
-  gap: var(--e3);
+  gap: var(--e2);
 }
 
 .titreGroupe {
@@ -90,19 +81,16 @@
   justify-content: space-between;
   gap: var(--e2);
   padding-inline: var(--e2);
-  font-family: var(--police-titre);
-  font-size: 18px;
-  line-height: 26px;
+  font-size: 13px;
+  line-height: 20px;
   font-weight: 500;
-  color: var(--texte);
+  color: var(--texte-3);
 }
 
 .nombre {
-  font-family: var(--police-texte);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 400;
-  letter-spacing: 0.04em;
-  color: var(--accent);
+  color: var(--texte-3);
 }
 
 .liste {
@@ -123,8 +111,7 @@
   overflow: hidden;
   font-size: 14px;
   font-weight: 500;
-  line-height: 21px;
-  letter-spacing: 0.015em;
+  line-height: 20px;
   color: var(--texte);
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -133,14 +120,13 @@
 /* ---------- Un ami ---------- */
 
 .personne {
-  position: relative;
   display: flex;
   align-items: center;
   gap: var(--e3);
-  min-height: 58px;
-  padding: var(--e2);
+  min-height: 52px;
+  padding: 6px;
   border-radius: var(--rayon-m);
-  transition: background-color var(--duree) var(--courbe);
+  transition: background-color var(--duree-courte) var(--courbe);
 }
 
 .personne:hover {
@@ -152,34 +138,23 @@
   flex: none;
   display: block;
   border-radius: 50%;
-  transition: transform var(--duree) var(--courbe-ressort);
 }
 
-.personne:hover .portrait {
-  transform: scale(1.08);
-}
-
-/* La pastille de statut : verte qui bat en jeu, rose en ligne, pâle absent ou occupé. */
+/* La pastille de statut : verte en jeu, rose en ligne, pâle absent ou occupé. */
 .portrait::after {
   content: '';
   position: absolute;
   right: -1px;
   bottom: -1px;
-  width: 12px;
-  height: 12px;
+  width: 11px;
+  height: 11px;
   border: 2px solid var(--fond);
   border-radius: 50%;
   background: var(--cyan);
 }
 
-.portrait[data-statut='en_jeu'] {
-  box-shadow: 0 0 0 2px var(--fond), 0 0 0 3.5px var(--ecarlate);
-}
-
 .portrait[data-statut='en_jeu']::after {
   background: var(--succes);
-  animation: battre var(--duree-lueur) ease-in-out infinite alternate;
-  animation-play-state: var(--lecture-ambiance);
 }
 
 .portrait[data-statut='absent']::after,
@@ -187,20 +162,13 @@
   background: var(--alerte);
 }
 
-@keyframes battre {
-  from {
-    opacity: 0.5;
-  }
-}
-
 .activite {
   display: flex;
   align-items: center;
-  gap: var(--e2);
+  gap: 5px;
   min-width: 0;
   font-size: 12px;
-  line-height: 20px;
-  letter-spacing: 0.03em;
+  line-height: 18px;
   color: var(--texte-3);
 }
 
@@ -208,24 +176,12 @@
   flex: none;
 }
 
-/* Le jeu en cours, dans une pastille sombre qui rougit sous le pointeur. */
 .jeu {
   min-width: 0;
   overflow: hidden;
-  padding: 1px 8px;
-  border-radius: var(--rayon-s);
-  background: rgb(255 255 255 / 0.07);
   color: var(--texte-2);
   white-space: nowrap;
   text-overflow: ellipsis;
-  transition:
-    background var(--duree) var(--courbe),
-    color var(--duree) var(--courbe);
-}
-
-.personne:hover .jeu {
-  background: color-mix(in srgb, var(--ecarlate) 28%, transparent);
-  color: var(--texte);
 }
 
 .vide {
@@ -239,39 +195,30 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--e2);
-  min-height: 44px;
-  padding: 0 var(--e3);
+  min-height: 40px;
+  padding: 0 var(--e2);
   border-radius: var(--rayon-m);
   font-size: 13px;
-  letter-spacing: 0.03em;
   color: var(--texte-3);
   transition:
-    color var(--duree) var(--courbe),
-    background var(--duree) var(--courbe);
+    color var(--duree-courte) var(--courbe),
+    background-color var(--duree-courte) var(--courbe);
 }
 
 .tous:hover {
   background: var(--survol);
-  color: var(--accent);
+  color: var(--texte);
 }
 
-.tous svg {
-  transition: transform var(--duree) var(--courbe-ressort);
-}
-
-.tous:hover svg {
-  transform: translateX(4px);
-}
-
-/* ---------- Un jeu joué récemment ---------- */
+/* ---------- Un jeu presque fini ---------- */
 
 .recent {
   display: flex;
   align-items: center;
-  gap: var(--e4);
-  padding: var(--e2);
+  gap: var(--e3);
+  padding: 6px;
   border-radius: var(--rayon-m);
-  transition: background var(--duree) var(--courbe);
+  transition: background-color var(--duree-courte) var(--courbe);
 }
 
 .recent:hover {
@@ -281,35 +228,29 @@
 .vignette {
   position: relative;
   flex: none;
-  width: 52px;
-  height: 66px;
+  width: 40px;
+  height: 52px;
   overflow: hidden;
-  border-radius: var(--rayon-s);
-  box-shadow: 0 8px 20px -8px color-mix(in srgb, var(--couleur-jaquette, var(--ecarlate)) 80%, transparent);
-  transition: transform var(--duree) var(--courbe-ressort);
+  border-radius: 6px;
 }
 
 .vignetteImage {
   width: 100%;
   height: 100%;
-}
-
-.recent:hover .vignette {
-  transform: scale(1.07) rotate(-2deg);
+  border-radius: 0;
 }
 
 .mesure {
   font-size: 12px;
-  line-height: 20px;
-  letter-spacing: 0.03em;
+  line-height: 18px;
   color: var(--texte-3);
 }
 
 .jauge {
   position: relative;
   display: block;
-  height: 4px;
-  margin-top: 4px;
+  height: 3px;
+  margin-top: 5px;
   overflow: hidden;
   border-radius: 999px;
   background: rgb(255 255 255 / 0.08);
@@ -321,163 +262,22 @@
   width: var(--part);
   border-radius: inherit;
   background: var(--degrade);
-  box-shadow: 0 0 10px color-mix(in srgb, var(--ecarlate) 70%, transparent);
-  transform-origin: left;
-  animation: remplirJauge calc(var(--duree-compte) * 1.3) var(--courbe) backwards;
-  animation-delay: 300ms;
 }
 
-@keyframes remplirJauge {
-  from {
-    transform: scaleX(0);
-  }
-}
-
-/* ---------- Repliée : les portraits et les jaquettes seuls, le texte s'efface pendant que la colonne se resserre ---------- */
-
-.colonne {
-  transition: padding 460ms var(--courbe);
-}
-
-.titreGroupe,
-.texte,
-.profil > svg,
-.tous,
-.basculeTexte,
-.vide {
-  transition: opacity 240ms var(--courbe);
-  white-space: nowrap;
-}
+/* ---------- Repliée : les portraits et les jaquettes seuls, leur nom passe en infobulle ---------- */
 
 .colonne[data-replie] {
-  padding-inline: 14px;
+  align-items: center;
+  padding-inline: 0;
 }
 
 .colonne[data-replie] .titreGroupe,
 .colonne[data-replie] .texte,
-.colonne[data-replie] .profil > svg,
 .colonne[data-replie] .tous,
-.colonne[data-replie] .basculeTexte,
 .colonne[data-replie] .vide {
-  opacity: 0;
-  pointer-events: none;
-}
-
-.colonne[data-replie] .profil {
-  padding: var(--e1);
-}
-
-.colonne[data-replie] .groupe {
-  gap: var(--e1);
-}
-
-.colonne[data-replie] .recent {
-  gap: 0;
-}
-
-.vignette {
-  transition:
-    transform var(--duree) var(--courbe-ressort),
-    width 460ms var(--courbe),
-    height 460ms var(--courbe);
-}
-
-.colonne[data-replie] .vignette {
-  width: 40px;
-  height: 52px;
-}
-
-/* Le bouton qui replie ou déplie la colonne, tout en bas : sombre, une flèche qui se retourne. */
-.bascule {
-  flex: none;
-  margin-top: auto;
-  display: flex;
-  align-items: center;
-  gap: var(--e3);
-  min-height: 44px;
-  padding: 0 var(--e3);
-  overflow: hidden;
-  border: 0;
-  border-radius: var(--rayon-m);
-  background: rgb(255 255 255 / 0.04);
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.06);
-  color: var(--texte-3);
-  font: inherit;
-  font-size: 13px;
-  letter-spacing: 0.03em;
-  cursor: pointer;
-  transition:
-    background var(--duree) var(--courbe),
-    color var(--duree) var(--courbe),
-    padding 460ms var(--courbe);
-}
-
-.bascule:hover {
-  background: linear-gradient(90deg, color-mix(in srgb, var(--ecarlate) 16%, transparent), rgb(255 255 255 / 0.04));
-  color: var(--texte);
-}
-
-.basculeIcone {
-  flex: none;
-  display: grid;
-  place-items: center;
-  width: 20px;
-  color: var(--accent);
-  transition: transform 460ms var(--courbe-ressort);
-}
-
-.colonne[data-replie] .bascule {
-  padding: 0 calc((56px - 20px) / 2);
-}
-
-.colonne[data-replie] .basculeIcone {
-  transform: rotate(180deg);
-}
-
-/* Le bouton de repli remonte en haut, à côté du profil : rond, sombre, bien visible. */
-.tete {
-  flex: none;
-  display: flex;
-  align-items: center;
-  gap: var(--e2);
-}
-
-.tete .profil {
-  flex: 1;
-  min-width: 0;
-}
-
-.tete .profil > svg {
   display: none;
 }
 
-.tete .bascule {
-  margin: 0;
-  width: 40px;
-  min-height: 40px;
-  height: 40px;
-  padding: 0;
-  justify-content: center;
-  border-radius: 50%;
-}
-
-.tete .basculeIcone {
-  width: auto;
-}
-
-.colonne[data-replie] .tete {
-  flex-direction: column;
-  gap: var(--e3);
-}
-
-.colonne[data-replie] .tete .bascule {
-  padding: 0;
-}
-
-.colonne[data-replie] .tete .profil {
-  flex: none;
+.colonne[data-replie] .groupe {
   gap: 0;
-  padding: 0;
-  min-height: 0;
-  background: none;
 }

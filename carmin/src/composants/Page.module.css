@@ -1,96 +1,35 @@
 /* Mise en page des écrans sans affiche : un titre, puis le contenu dans une colonne lisible. */
 .page {
-  position: relative;
-  isolation: isolate;
-  padding: var(--e8) var(--marge-page) 0;
-}
-
-/*
- * Le titre fantôme : hors du flux, donc hors de la cascade des enfants (`animation: none` annule celle
- * de `.cascade`, puis il a la sienne). Il glisse depuis la droite et dérive ensuite très lentement.
- */
-.page > .fantome {
-  position: absolute;
-  top: calc(var(--e2) * -1);
-  right: 0;
-  z-index: -1;
-  max-width: 100%;
-  overflow: hidden;
-  font-family: var(--police-titre);
-  font-stretch: var(--etirement-titre);
-  font-size: clamp(120px, 19vw, 300px);
-  line-height: 0.9;
-  font-weight: 500;
-  letter-spacing: var(--serrage-titre);
-  white-space: nowrap;
-  color: transparent;
-  -webkit-text-stroke: 1px var(--contour-fantome);
-  pointer-events: none;
-  user-select: none;
-  mask-image: linear-gradient(180deg, black 30%, transparent 96%);
-  animation:
-    glisser calc(var(--duree-longue) * 1.6) var(--courbe) backwards,
-    flotter var(--duree-ambiance) ease-in-out infinite alternate;
-  animation-play-state: running, var(--lecture-ambiance);
-}
-
-@keyframes glisser {
-  from {
-    opacity: 0;
-    transform: translateX(8%);
-  }
-}
-
-@keyframes flotter {
-  to {
-    transform: translateX(-3%);
-  }
+  padding: var(--e4) var(--marge-page) 0;
 }
 
 .etroite {
   max-width: calc(880px + 2 * var(--marge-page));
 }
 
-/* Sous l'en-tête, un filet sur toute la largeur et un repère d'accent à son début. */
 .entete {
-  position: relative;
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
   justify-content: space-between;
   gap: var(--e3) var(--e6);
   margin-bottom: var(--e8);
-  padding-bottom: var(--e5);
-  border-bottom: 1px solid var(--trait);
-}
-
-.entete::after {
-  /* Épuré : plus de filet rouge sous chaque titre de page. */
-  display: none;
-  content: '';
-  position: absolute;
-  left: 0;
-  bottom: -2px;
-  width: 72px;
-  height: 3px;
-  border-radius: 3px;
-  background: var(--degrade);
-  box-shadow: var(--lueur-accent);
 }
 
 .titre {
   font-family: var(--police-titre);
   font-stretch: var(--etirement-titre);
-  font-size: calc(clamp(30px, 3.4vw, 46px) * var(--echelle-titre));
-  line-height: 1.05;
-  font-weight: 300;
-  letter-spacing: var(--serrage-titre);
+  font-size: calc(clamp(28px, 2.5vw, 34px) * var(--echelle-titre));
+  line-height: 1.15;
+  font-weight: 500;
+  letter-spacing: -0.01em;
   text-wrap: balance;
 }
 
 .sousTitre {
-  margin-top: var(--e2);
+  margin-top: var(--e1);
   color: var(--texte-3);
+  font-size: 14px;
 }
 
 .actions {
@@ -100,15 +39,13 @@
 }
 
 .retour {
-  margin-bottom: var(--e5);
+  margin-bottom: var(--e4);
 }
 
-/* Bloc de contenu sur fond de surface : réglages, listes courtes. */
+/* Bloc de contenu sur une surface : réglages, listes courtes. */
 .carte {
-  padding: var(--e2) var(--e5);
-  background: var(--fond-verre);
-  backdrop-filter: var(--verre);
-  box-shadow: var(--arete), inset 0 0 0 1px color-mix(in srgb, var(--trait-clair) 25%, transparent);
+  padding: var(--e1) var(--e5);
+  background: var(--carte);
   border-radius: var(--rayon-l);
 }
 
@@ -117,12 +54,12 @@
 }
 
 .section > h2 {
-  margin-bottom: 14px;
+  margin-bottom: var(--e3);
 }
 
 .sectionTexte {
   max-width: 640px;
-  margin: -6px 0 14px;
+  margin: -6px 0 var(--e3);
   color: var(--texte-3);
   font-size: 14px;
 }

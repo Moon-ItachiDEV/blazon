@@ -1,4 +1,4 @@
-/* Galerie de captures : une scène qui défile seule, une bande de miniatures qui grossissent au survol. */
+/* Galerie de captures : une grande image, et une bande de miniatures dessous. */
 .galerie {
   display: flex;
   flex-direction: column;
@@ -7,9 +7,8 @@
 
 .scene {
   position: relative;
-  border-radius: var(--rayon-l);
   overflow: hidden;
-  box-shadow: var(--ombre-carte), 0 0 0 1px rgb(255 255 255 / 0.08);
+  border-radius: var(--rayon-l);
   background: var(--surface-1);
 }
 
@@ -17,86 +16,45 @@
   position: relative;
   display: block;
   width: 100%;
-  aspect-ratio: 16 / 8;
+  aspect-ratio: 16 / 9;
   padding: 0;
   border: 0;
   background: none;
   cursor: zoom-in;
-  overflow: hidden;
 }
 
-/* Toutes les captures empilées : la courante apparaît en fondu et avance lentement vers nous. */
 .image {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  opacity: 0;
-  transform: scale(1.06);
-  transition:
-    opacity calc(var(--duree-longue) * 1.4) var(--courbe),
-    transform calc(var(--duree-longue) * 1.4) var(--courbe);
+  animation: apparaitre var(--duree) var(--courbe);
 }
 
-.image[data-active] {
-  opacity: 1;
-  transform: scale(1);
-  animation: approcher calc(var(--duree-longue) * 12) linear forwards;
-  animation-delay: calc(var(--duree-longue) * 1.2);
-}
-
-.voile {
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(0deg, rgb(0 0 0 / 0.55), transparent 32%),
-    linear-gradient(180deg, rgb(0 0 0 / 0.25), transparent 22%);
-  pointer-events: none;
-}
-
-.agrandir {
-  position: absolute;
-  top: var(--e4);
-  right: var(--e4);
-  display: grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  color: var(--texte);
-  background: rgb(0 0 0 / 0.45);
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.22);
-  opacity: 0;
-  transform: scale(0.8);
-  transition:
-    opacity var(--duree) var(--courbe),
-    transform var(--duree) var(--courbe-ressort);
-}
-
-.grande:hover .agrandir,
-.grande:focus-visible .agrandir {
-  opacity: 1;
-  transform: none;
+@keyframes apparaitre {
+  from {
+    opacity: 0;
+  }
 }
 
 .position {
   position: absolute;
-  left: var(--e4);
-  bottom: var(--e4);
-  padding: 4px 12px;
+  left: var(--e3);
+  bottom: var(--e3);
+  padding: 3px 10px;
   border-radius: 999px;
-  font-size: 13px;
-  font-weight: 500;
-  background: rgb(0 0 0 / 0.5);
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.16);
+  background: rgb(10 7 8 / 0.62);
+  color: var(--texte-2);
+  font-size: 12px;
+  line-height: 18px;
   pointer-events: none;
 }
 
 .fleches {
   position: absolute;
-  right: var(--e4);
-  bottom: var(--e4);
+  right: var(--e3);
+  bottom: var(--e3);
   display: flex;
   gap: var(--e2);
 }
@@ -104,49 +62,42 @@
 .fleche {
   display: grid;
   place-items: center;
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border: 0;
   border-radius: 50%;
+  background: rgb(10 7 8 / 0.62);
   color: var(--texte);
-  background: rgb(0 0 0 / 0.5);
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.2);
-  transition:
-    transform var(--duree) var(--courbe-ressort),
-    background-color var(--duree) var(--courbe);
+  transition: background-color var(--duree-courte) var(--courbe);
 }
 
 .fleche:hover {
-  background: rgb(255 255 255 / 0.18);
-  transform: scale(1.08);
+  background: rgb(36 30 32 / 0.86);
+}
+
+.fleche:active {
+  transform: scale(0.94);
 }
 
 .inverse > svg {
   transform: scaleX(-1);
 }
 
-/* La bande : défile à la main (ou à la roulette), chaque case s'aimante. Les miniatures grossissent sans être rognées. */
+/* La bande défile à la main (ou à la molette) ; chaque case s'aimante. */
 .bande {
-  position: relative;
   display: flex;
-  gap: var(--e3);
-  padding: 10px 4px 12px;
-  margin: -10px -4px -12px;
+  gap: var(--e2);
+  padding: 3px;
+  margin: -3px;
   overflow-x: auto;
   scroll-snap-type: x proximity;
   scrollbar-width: none;
 }
 
-.bande::-webkit-scrollbar {
-  display: none;
-}
-
 .case {
   flex: none;
-  width: clamp(120px, 15%, 170px);
+  width: clamp(104px, 14%, 148px);
   scroll-snap-align: center;
-  animation: arriver-case var(--duree-longue) var(--courbe) backwards;
-  animation-delay: calc(var(--duree) + var(--rang) * var(--pas-cascade));
 }
 
 .miniature {
@@ -156,15 +107,11 @@
   aspect-ratio: 16 / 9;
   padding: 0;
   border: 0;
-  border-radius: var(--rayon-m);
+  border-radius: var(--rayon-s);
   overflow: hidden;
   background: var(--surface-2);
   opacity: 0.55;
-  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.08);
-  transition:
-    transform var(--duree) var(--courbe-ressort),
-    opacity var(--duree) var(--courbe),
-    box-shadow var(--duree) var(--courbe);
+  transition: opacity var(--duree-courte) var(--courbe);
 }
 
 .miniature img {
@@ -175,44 +122,12 @@
 
 .miniature:hover {
   opacity: 1;
-  transform: translateY(-3px) scale(1.06);
 }
 
-/* La miniature à l'écran : liseré au dégradé du blason et une lueur. */
+/* La miniature à l'écran : un anneau clair. */
 .miniature[aria-current] {
   opacity: 1;
   box-shadow:
-    0 0 0 2px var(--accent),
-    0 8px 24px color-mix(in srgb, var(--accent-2) 35%, transparent);
-}
-
-/* Le temps qui reste avant la capture suivante. */
-.minuteur {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 3px;
-  background: var(--degrade);
-  transform-origin: left;
-  animation: decompter var(--pause) linear both;
-}
-
-@keyframes approcher {
-  to {
-    transform: scale(1.08);
-  }
-}
-
-@keyframes decompter {
-  from {
-    transform: scaleX(0);
-  }
-}
-
-@keyframes arriver-case {
-  from {
-    opacity: 0;
-    transform: translateX(24px);
-  }
+    0 0 0 1px var(--fond),
+    0 0 0 3px rgb(255 255 255 / 0.92);
 }

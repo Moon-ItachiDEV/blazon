@@ -16,9 +16,11 @@
   gap: var(--e3);
   padding: var(--e3) var(--e3) var(--e3) var(--e4);
   background: var(--surface-2);
-  border: 1px solid var(--trait-fort);
   border-radius: var(--rayon-m);
-  box-shadow: var(--ombre-flottante);
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.08),
+    var(--ombre-flottante);
+  font-size: 14px;
   animation: arriver var(--duree) var(--courbe);
 }
 
@@ -33,8 +35,8 @@
 .fermer {
   display: grid;
   place-items: center;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   background: transparent;
   border: 0;
   border-radius: var(--rayon-s);
@@ -42,7 +44,7 @@
 }
 
 .fermer:hover {
-  background: var(--surface-3);
+  background: var(--survol);
   color: var(--texte);
 }
 

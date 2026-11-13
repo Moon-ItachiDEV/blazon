@@ -1,22 +1,9 @@
 import { disponible } from '../artefact/images';
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type AnimationEvent,
-  type CSSProperties,
-  type KeyboardEvent,
-  type MouseEvent,
-  type PointerEvent,
-  type ReactNode,
-} from 'react';
+import { useEffect, useMemo, useRef, useState, type AnimationEvent, type CSSProperties, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react';
 import type { JeuResume } from '../../contrat/types';
 import { BoutonJouer } from '../composants/BoutonJouer';
-import { Icone, type NomDIcone } from '../composants/Icone';
+import { Icone } from '../composants/Icone';
 import { Jaquette } from '../composants/Jaquette';
-import { NombreAnime } from '../composants/NombreAnime';
-import { suiviDeListe } from '../composants/pointeur';
 import { coeur } from '../coeur';
 import { useApplication } from '../etat/application';
 import { useDetail } from '../etat/detail';
@@ -88,12 +75,14 @@ function aRedecouvrir(jeux: readonly JeuResume[], exclus: ReadonlySet<number>, m
     .slice(0, nombre);
 }
 
+/** Délai avant qu'une jaquette survolée ne passe en vitrine : traverser l'étagère ne change pas dix fois d'image. */
+const INTENTION = 140;
+
 /**
- * Orientation « Carmin » : la vitrine. L'image du jeu choisi remplit une grande carte arrondie et dérive
- * lentement ; dessus, ses tags, son titre, ses chiffres et Jouer ; à droite, la carte carmin du jeu et
- * deux captures ; dessous, les points du carrousel (la vitrine passe seule au jeu suivant toutes les
- * 9 secondes, en pause sous le pointeur), puis les dernières parties en grandes jaquettes, puis les jeux
- * à redécouvrir.
+ * La vitrine de l'accueil. L'image du jeu choisi remplit une grande carte arrondie ; dessus, ses tags,
+ * son titre, ses chiffres et Jouer ; à droite, sa description et deux captures ; dessous, un point par
+ * jeu, puis les dernières parties en grandes jaquettes, puis les jeux à redécouvrir.
+ * Rien ne bouge seul : la vitrine ne change que si l'on choisit un autre jeu.
  * Survoler ou toucher une jaquette la choisit (le fond change avec elle) ; un second toucher, ou
  * Entrée, ouvre sa fiche. Les flèches gauche et droite parcourent l'étagère.
  */
@@ -105,7 +94,6 @@ export function Scene({ jeu, recents }: { jeu: JeuResume; recents: JeuResume[] }
   const fiche = useReponse(() => coeur.fiche_du_jeu(jeu.id), 'fiche', jeu.id, `fiche:${jeu.id}`);
   const amis = useReponse(() => coeur.amis(), 'amis', null, 'amis');
   const etagere = useRef<HTMLUListElement>(null);
-  const suiviEtagere = useMemo(() => suiviDeListe('[data-case]'), []);
 
   const [couches, coucheArrivee] = useCouches(jeu, detail === null ? undefined : (detail.hero ?? detail.en_tete));
 
@@ -140,27 +128,20 @@ export function Scene({ jeu, recents }: { jeu: JeuResume; recents: JeuResume[] }
     if (cible !== null) liste.scrollTo({ left: Math.max(0, cible), behavior: animationsActives() ? 'smooth' : 'auto' });
   }, [jeu.id]);
 
-  // Parallaxe : le fond recule, le texte avance, la carte penche, selon la place de la souris.
-  const imageEnAttente = useRef(0);
-  const suivre = (evenement: PointerEvent<HTMLElement>) => {
-    if (evenement.pointerType !== 'mouse' || !animationsActives()) return;
-    const element = evenement.currentTarget;
-    const { clientX, clientY } = evenement;
-    cancelAnimationFrame(imageEnAttente.current);
-    imageEnAttente.current = requestAnimationFrame(() => {
-      const cadre = element.getBoundingClientRect();
-      const x = Math.min(1, Math.max(-1, ((clientX - cadre.left) / cadre.width) * 2 - 1));
-      const y = Math.min(1, Math.max(-1, ((clientY - cadre.top) / cadre.height) * 2 - 1));
-      element.style.setProperty('--sx', x.toFixed(3));
-      element.style.setProperty('--sy', y.toFixed(3));
-    });
+  // Survol : la jaquette ne passe en vitrine que si le pointeur s'y arrête un instant.
+  const intention = useRef<number | null>(null);
+  const annulerLIntention = () => {
+    if (intention.current !== null) window.clearTimeout(intention.current);
+    intention.current = null;
   };
-  const oublier = (evenement: PointerEvent<HTMLElement>) => {
-    cancelAnimationFrame(imageEnAttente.current);
-    evenement.currentTarget.style.removeProperty('--sx');
-    evenement.currentTarget.style.removeProperty('--sy');
+  const viser = (id: number) => {
+    annulerLIntention();
+    intention.current = window.setTimeout(() => {
+      intention.current = null;
+      jeuEnScene.ecrire(id);
+    }, INTENTION);
   };
-  useEffect(() => () => cancelAnimationFrame(imageEnAttente.current), []);
+  useEffect(() => annulerLIntention, []);
 
   const parcourir = (evenement: KeyboardEvent<HTMLUListElement>) => {
     if (evenement.key !== 'ArrowRight' && evenement.key !== 'ArrowLeft') return;
@@ -179,18 +160,18 @@ export function Scene({ jeu, recents }: { jeu: JeuResume; recents: JeuResume[] }
     }
   };
 
-  const chiffres: { icone: NomDIcone; valeur: ReactNode; nom: string }[] = [];
+  const chiffres: { cle: string; valeur: ReactNode; nom: string }[] = [];
   chiffres.push({
-    icone: 'horloge',
-    valeur: <NombreAnime valeur={jeu.temps.minutes_total} format={(v) => formaterTempsDeJeu(Math.round(v), langue)} />,
+    cle: 'temps',
+    valeur: formaterTempsDeJeu(jeu.temps.minutes_total, langue),
     nom: t('scene.tuile.temps'),
   });
   if (succes !== null) {
     chiffres.push({
-      icone: 'trophee',
+      cle: 'succes',
       valeur: (
         <>
-          <NombreAnime valeur={succes.debloques ?? 0} format={(v) => formaterNombre(Math.round(v), langue)} />
+          {formaterNombre(Math.round((succes.debloques ?? 0)), langue)}
           <small> / {formaterNombre(succes.total, langue)}</small>
         </>
       ),
@@ -199,23 +180,18 @@ export function Scene({ jeu, recents }: { jeu: JeuResume; recents: JeuResume[] }
   }
   if (magasin?.joueurs_en_ligne != null && magasin.joueurs_en_ligne > 0) {
     chiffres.push({
-      icone: 'amis',
-      valeur: <NombreAnime valeur={magasin.joueurs_en_ligne} format={(v) => formaterNombre(Math.round(v), langue)} />,
+      cle: 'joueurs',
+      valeur: formaterNombre(magasin.joueurs_en_ligne, langue),
       nom: t('salon.en_ligne_maintenant'),
     });
   } else {
     chiffres.push({
-      icone: 'manette',
+      cle: 'derniere',
       valeur: derniere ?? t('scene.tuile.jamais'),
       nom: derniere === null ? (jeu.date_sortie === null ? '' : formaterAnnee(jeu.date_sortie)) : t('scene.tuile.derniere'),
     });
   }
 
-  // La vitrine passe d'elle-même au jeu suivant quand la minuterie du point allumé est pleine.
-  const suivant = () => {
-    const prochain = recents[(rang + 1) % recents.length];
-    if (prochain !== undefined && prochain.id !== jeu.id) jeuEnScene.ecrire(prochain.id);
-  };
   const defiler = (sens: 1 | -1) => {
     const liste = etagere.current;
     if (liste !== null) liste.scrollBy({ left: sens * liste.clientWidth * 0.8, behavior: animationsActives() ? 'smooth' : 'auto' });
@@ -224,28 +200,21 @@ export function Scene({ jeu, recents }: { jeu: JeuResume; recents: JeuResume[] }
   return (
     <section className={styles.salon} style={{ '--couleur-jeu': jeu.couleur_dominante ?? undefined } as CSSProperties} aria-labelledby="salon-titre">
       <div className={styles.vitrine}>
-        <div className={styles.ecran} onPointerMove={suivre} onPointerLeave={oublier}>
+        <div className={styles.ecran}>
           <div className={styles.fond} aria-hidden="true">
-            <div className={styles.camera}>
-              {couches.map((couche) => (
-                <div
-                  key={couche.cle}
-                  className={styles.couche}
-                  data-sens={couche.cle % 2 === 0 ? 'pair' : 'impair'}
-                  style={{ '--couleur-couche': couche.couleur ?? undefined } as CSSProperties}
-                  onAnimationEnd={(e: AnimationEvent<HTMLDivElement>) => {
-                    if (e.target === e.currentTarget) coucheArrivee(couche.cle);
-                  }}
-                >
-                  {couche.image !== null ? <img className={styles.fondImage} src={couche.image} alt="" decoding="async" /> : <span className={styles.fondCouleur} />}
-                </div>
-              ))}
-            </div>
-            <span className={styles.voile} />
             {couches.map((couche) => (
-              <span key={couche.cle} className={styles.sol} style={{ '--couleur-couche': couche.couleur ?? undefined } as CSSProperties} />
+              <div
+                key={couche.cle}
+                className={styles.couche}
+                style={{ '--couleur-couche': couche.couleur ?? undefined } as CSSProperties}
+                onAnimationEnd={(e: AnimationEvent<HTMLDivElement>) => {
+                  if (e.target === e.currentTarget) coucheArrivee(couche.cle);
+                }}
+              >
+                {couche.image !== null ? <img className={styles.fondImage} src={couche.image} alt="" decoding="async" /> : <span className={styles.fondCouleur} />}
+              </div>
             ))}
-            <span className={styles.balayage} />
+            <span className={styles.voile} />
           </div>
 
           <div key={jeu.id} className={styles.infos}>
@@ -264,21 +233,14 @@ export function Scene({ jeu, recents }: { jeu: JeuResume; recents: JeuResume[] }
             </div>
 
             <h1 id="salon-titre" className={styles.titre}>
-              <span className={styles.titreMasque}>
-                {detail?.logo != null ? <img className={styles.logo} src={detail?.logo ?? ''} alt={jeu.titre} /> : jeu.titre}
-              </span>
+              {detail?.logo != null ? <img className={styles.logo} src={detail?.logo ?? ''} alt={jeu.titre} /> : jeu.titre}
             </h1>
 
             <ul className={styles.chiffres}>
               {chiffres.map((chiffre) => (
-                <li key={chiffre.icone}>
-                  <span className={styles.chiffreIcone}>
-                    <Icone nom={chiffre.icone} taille={16} />
-                  </span>
-                  <span className={styles.chiffreTexte}>
-                    <strong className="chiffres">{chiffre.valeur}</strong>
-                    <span>{chiffre.nom}</span>
-                  </span>
+                <li key={chiffre.cle}>
+                  <strong className="chiffres">{chiffre.valeur}</strong>
+                  <span>{chiffre.nom}</span>
                 </li>
               ))}
             </ul>
@@ -286,16 +248,16 @@ export function Scene({ jeu, recents }: { jeu: JeuResume; recents: JeuResume[] }
             <div className={styles.actions}>
               <BoutonJouer jeu={jeu} grand />
               <Lien className={styles.rond} vers={{ ecran: 'jeu', id_jeu: jeu.id }} aria-label={t('scene.voir_la_fiche')} title={t('scene.voir_la_fiche')}>
-                <Icone nom="info" taille={20} />
+                <Icone nom="info" taille={18} />
               </Lien>
               <Lien className={styles.rond} vers={{ ecran: 'succes', id_jeu: jeu.id }} aria-label={t('scene.tuile.succes')} title={t('scene.tuile.succes')}>
-                <Icone nom="trophee" taille={20} />
+                <Icone nom="trophee" taille={18} />
               </Lien>
               {pile.length > 0 && (
                 <p className={styles.joueurs}>
                   <span className={styles.pile} aria-hidden="true">
                     {pile.slice(0, 4).map((ami) => (
-                      <Avatar key={ami.steamid} image={ami.avatar} pseudo={ami.pseudo} taille={30} />
+                      <Avatar key={ami.steamid} image={ami.avatar} pseudo={ami.pseudo} taille={26} />
                     ))}
                   </span>
                   {joueurs.length > 0
@@ -309,8 +271,6 @@ export function Scene({ jeu, recents }: { jeu: JeuResume; recents: JeuResume[] }
 
         <div key={`carte-${jeu.id}`} className={styles.droite}>
           <article className={styles.carte}>
-            <span className={styles.carteLueur} aria-hidden="true" />
-            <span className={styles.carteReflet} aria-hidden="true" />
             <p className={styles.carteEtiquette}>{t('salon.carte.etiquette')}</p>
             <h2 className={styles.carteTitre}>{jeu.titre}</h2>
             <p className={styles.carteTexte}>{magasin?.description_courte ?? t('scene.sans_description')}</p>
@@ -332,12 +292,12 @@ export function Scene({ jeu, recents }: { jeu: JeuResume; recents: JeuResume[] }
                   <circle className={styles.jaugeValeur} cx="32" cy="32" r="28" pathLength="100" style={{ '--part': partSucces ?? 0 } as CSSProperties} />
                 </svg>
                 <span className="chiffres">
-                  {partSucces === null ? '–' : <NombreAnime valeur={partSucces} format={(v) => formaterPourcentage(Math.round(v), langue)} />}
+                  {partSucces === null ? '–' : formaterPourcentage(partSucces, langue)}
                 </span>
               </span>
               <Lien className={styles.carteBouton} vers={{ ecran: 'jeu', id_jeu: jeu.id }}>
                 {t('scene.voir_la_fiche')}
-                <Icone nom="chevron_droit" taille={18} />
+                <Icone nom="chevron_droit" taille={16} />
               </Lien>
             </div>
           </article>
@@ -346,24 +306,17 @@ export function Scene({ jeu, recents }: { jeu: JeuResume; recents: JeuResume[] }
 
       {recents.length > 1 && (
         <div className={styles.points}>
-          <span className="chiffres">
-            {String(rang + 1).padStart(2, '0')} <small>/ {String(recents.length).padStart(2, '0')}</small>
-          </span>
-          <span className={styles.pointsListe}>
-            {recents.map((j, index) => (
-              <button
-                key={j.id}
-                type="button"
-                tabIndex={-1}
-                aria-label={t('salon.choisir', { titre: j.titre })}
-                title={t('salon.position', { n: index + 1, total: recents.length })}
-                data-actif={j.id === jeu.id ? '' : undefined}
-                onClick={() => jeuEnScene.ecrire(j.id)}
-              >
-                {j.id === jeu.id && <span key={j.id} className={styles.minuterie} onAnimationEnd={suivant} />}
-              </button>
-            ))}
-          </span>
+          {recents.map((j, index) => (
+            <button
+              key={j.id}
+              type="button"
+              tabIndex={-1}
+              aria-label={t('salon.choisir', { titre: j.titre })}
+              title={t('salon.position', { n: index + 1, total: recents.length })}
+              data-actif={j.id === jeu.id ? '' : undefined}
+              onClick={() => jeuEnScene.ecrire(j.id)}
+            />
+          ))}
         </div>
       )}
 
@@ -372,14 +325,14 @@ export function Scene({ jeu, recents }: { jeu: JeuResume; recents: JeuResume[] }
           <h2 className="titre-section">{t('bibliotheque.dernieres_parties')}</h2>
           <span className={styles.fleches}>
             <button type="button" className={styles.fleche} aria-label={t('carmin.precedents')} onClick={() => defiler(-1)}>
-              <Icone nom="retour" taille={18} />
+              <Icone nom="retour" taille={16} />
             </button>
             <button type="button" className={styles.fleche} aria-label={t('carmin.suivants')} onClick={() => defiler(1)}>
-              <Icone nom="chevron_droit" taille={18} />
+              <Icone nom="chevron_droit" taille={16} />
             </button>
           </span>
         </div>
-        <ul ref={etagere} className={`cascade ${styles.etagere}`} onKeyDown={parcourir} {...suiviEtagere}>
+        <ul ref={etagere} className={styles.etagere} onKeyDown={parcourir} onPointerLeave={annulerLIntention}>
           {recents.map((j) => (
             <li key={j.id} data-choisi={j.id === jeu.id ? '' : undefined}>
               <Lien
@@ -390,17 +343,16 @@ export function Scene({ jeu, recents }: { jeu: JeuResume; recents: JeuResume[] }
                 data-choisi={j.id === jeu.id ? '' : undefined}
                 aria-current={j.id === jeu.id ? 'true' : undefined}
                 onPointerEnter={(e) => {
-                  if (e.pointerType === 'mouse') jeuEnScene.ecrire(j.id);
+                  if (e.pointerType === 'mouse' && j.id !== jeu.id) viser(j.id);
                 }}
+                onPointerLeave={annulerLIntention}
                 onFocus={() => jeuEnScene.ecrire(j.id)}
                 onClick={toucher(j)}
-                style={{ '--couleur-jaquette': j.couleur_dominante ?? undefined } as CSSProperties}
               >
                 <span className={styles.caseCadre}>
                   <Jaquette jeu={j} prioritaire className={styles.caseImage ?? ''} />
-                  <span className={styles.casePellicule} aria-hidden="true" />
                   <span className={styles.caseJouer} aria-hidden="true">
-                    <Icone nom="jouer" taille={20} />
+                    <Icone nom="jouer" taille={16} />
                   </span>
                 </span>
                 <span className={styles.caseNom}>{j.titre}</span>
@@ -414,7 +366,7 @@ export function Scene({ jeu, recents }: { jeu: JeuResume; recents: JeuResume[] }
               className={styles.toutVoir}
               onClick={() => document.getElementById('toute-la-bibliotheque')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
             >
-              <Icone nom="grille" taille={26} />
+              <Icone nom="grille" taille={22} />
               <span>{t('salon.toute_la_bibliotheque')}</span>
             </button>
           </li>
@@ -432,7 +384,6 @@ function Redecouvrir({ recents }: { recents: JeuResume[] }) {
   const jeux = useApplication((a) => a.jeux);
   const maintenant = useMaintenant();
   const jour = maintenant.toDateString();
-  const suivi = useMemo(() => suiviDeListe('[data-carte]'), []);
   const choix = useMemo(
     () => (jeux === null ? [] : aRedecouvrir(jeux, new Set(recents.map((j) => j.id)), new Date(jour), 4)),
     [jeux, recents, jour],
@@ -444,7 +395,7 @@ function Redecouvrir({ recents }: { recents: JeuResume[] }) {
         <h2 id="salon-redecouvrir">{t('salon.redecouvrir.titre')}</h2>
         <p>{t('salon.redecouvrir.sous_titre')}</p>
       </header>
-      <ul className={`cascade ${styles.offres}`} {...suivi}>
+      <ul className={styles.offres}>
         {choix.map((jeu, index) => (
           <li key={jeu.id}>
             <CarteOubliee jeu={jeu} grande={index === 0} />
@@ -465,18 +416,11 @@ function CarteOubliee({ jeu, grande }: { jeu: JeuResume; grande: boolean }) {
   const derniere = jeu.temps.dernier_lancement === null ? null : formaterDateRelative(jeu.temps.dernier_lancement, langue, maintenant);
   const tag = jeu.tags.map((id) => noms.get(id)).find((nom) => nom !== undefined);
   return (
-    <Lien
-      className={styles.offre}
-      vers={{ ecran: 'jeu', id_jeu: jeu.id }}
-      data-carte=""
-      data-grande={grande ? '' : undefined}
-      style={{ '--couleur-jaquette': jeu.couleur_dominante ?? undefined } as CSSProperties}
-    >
+    <Lien className={styles.offre} vers={{ ecran: 'jeu', id_jeu: jeu.id }} data-grande={grande ? '' : undefined} style={{ '--couleur-jaquette': jeu.couleur_dominante ?? undefined } as CSSProperties}>
       <span className={styles.offreImage} aria-hidden="true">
         {image != null && <img src={image} alt="" loading="lazy" decoding="async" />}
       </span>
       <span className={styles.offreVoile} aria-hidden="true" />
-      <span className={styles.offreEclat} aria-hidden="true" />
       <span className={styles.offreTexte}>
         {tag !== undefined && <span className={styles.offreTag}>{tag}</span>}
         {grande && disponible(detail?.logo) ? <img className={styles.offreLogo} src={detail.logo} alt={jeu.titre} /> : <strong>{jeu.titre}</strong>}
@@ -484,9 +428,6 @@ function CarteOubliee({ jeu, grande }: { jeu: JeuResume; grande: boolean }) {
           {derniere === null ? t('scene.tuile.jamais') : t('salon.joue', { quand: derniere.charAt(0).toLocaleLowerCase(langue) + derniere.slice(1) })}
           {jeu.avis !== null && jeu.avis.nombre > 0 && <span>{t('salon.avis', { pct: formaterPourcentage(jeu.avis.pct_positifs, langue) })}</span>}
         </small>
-      </span>
-      <span className={styles.offreFleche} aria-hidden="true">
-        <Icone nom="chevron_droit" taille={20} />
       </span>
     </Lien>
   );

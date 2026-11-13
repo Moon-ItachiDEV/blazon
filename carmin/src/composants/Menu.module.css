@@ -13,12 +13,14 @@
   min-width: max(anchor-size(width), 200px);
   max-height: min(420px, 70vh);
   overflow-y: auto;
-  padding: 6px;
+  padding: 5px;
   background: var(--surface-2);
-  border: 1px solid var(--trait);
+  border: 0;
   border-radius: var(--rayon-m);
   color: var(--texte);
-  box-shadow: var(--ombre-flottante);
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.08),
+    var(--ombre-flottante);
   opacity: 0;
   transform: translateY(-4px);
   transition:
@@ -50,18 +52,19 @@
   align-items: center;
   gap: 10px;
   width: 100%;
-  min-height: 44px;
-  padding: 0 12px;
+  min-height: 36px;
+  padding: 0 10px;
   background: transparent;
   border: 0;
-  border-radius: var(--rayon-s);
+  border-radius: 7px;
+  font-size: 14px;
   text-align: left;
   white-space: nowrap;
 }
 
 .element:hover,
 .element:focus-visible {
-  background: var(--surface-3);
+  background: rgb(255 255 255 / 0.08);
 }
 
 .element:focus-visible {
@@ -79,11 +82,11 @@
 
 .coche {
   width: 18px;
-  color: var(--accent);
+  color: var(--texte-2);
 }
 
 .separateur {
   height: 1px;
-  margin: 6px 4px;
-  background: var(--trait);
+  margin: 5px 4px;
+  background: var(--filet);
 }

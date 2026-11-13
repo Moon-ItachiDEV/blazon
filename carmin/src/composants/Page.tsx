@@ -23,13 +23,9 @@ export function Page({ titre, sousTitre, actions, retour = false, etroite = fals
   const { t } = useTexte();
   return (
     <div className={`cascade ${styles.page} ${etroite ? styles.etroite : ''}`}>
-      {/* Le titre en très grand, au trait, derrière le contenu : il occupe le haut de page sans rien dire de plus. */}
-      <span className={styles.fantome} aria-hidden="true">
-        {titre}
-      </span>
       {retour && (
         <button type="button" className={classeBouton({}, styles.retour)} onClick={revenir}>
-          <Icone nom="retour" taille={18} />
+          <Icone nom="retour" taille={16} />
           {t('commun.retour')}
         </button>
       )}

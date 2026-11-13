@@ -64,7 +64,7 @@ function ComptesSteam({ comptes, echec, choisir, reessayer }: ReturnType<typeof 
   if (comptes === null) {
     return (
       <div role="status" aria-label={t('commun.chargement')}>
-        <Squelette hauteur="72px" rayon="var(--rayon-l)" style={{ display: 'block' }} />
+        <Squelette hauteur="60px" rayon="var(--rayon-l)" style={{ display: 'block' }} />
       </div>
     );
   }
@@ -133,11 +133,6 @@ export function SectionSteam({ etat }: { etat: EtatApp }) {
             <BlocDEtat icone={cle.icone} ton={cle.ton} titre={t(cle.titre)} texte={t(cle.texte)} refDuTitre={titreDeLaCle} />
           </div>
 
-          <p className={`${styles.discret} ${styles.actions}`}>
-            <Icone nom="cadenas" taille={16} />
-            <span className={styles.rangeeTexte}>{t('parametres.cle.garantie')}</span>
-          </p>
-
           {explication === 'profil_prive' && (
             <BlocDEtat icone="cadenas" ton="alerte" titre={t('parametres.profil_prive.titre')} texte={t('parametres.profil_prive.texte')}>
               <ol className={styles.etapes}>
@@ -149,7 +144,7 @@ export function SectionSteam({ etat }: { etat: EtatApp }) {
                 <div className={styles.actions}>
                   <Bouton onClick={() => void tenter(() => coeur.action_steam({ action: 'ouvrir_le_profil', steamid: compteActif.steamid }))}>
                     {t('parametres.profil_prive.ouvrir')}
-                    <Icone nom="lien_externe" taille={18} />
+                    <Icone nom="lien_externe" taille={16} />
                   </Bouton>
                 </div>
               )}
@@ -165,11 +160,19 @@ export function SectionSteam({ etat }: { etat: EtatApp }) {
       <Section titre={etat.cle === 'absente' ? t('parametres.cle.ajouter') : t('parametres.cle.remplacer')}>
         <div className={styles.pile}>
           {!etat.en_ligne && <Note icone="hors_ligne">{t('parametres.cle.hors_ligne')}</Note>}
-          <FormulaireDeCle />
+          <Carte>
+            <div className={styles.formulaireDeCle}>
+              <FormulaireDeCle />
+            </div>
+          </Carte>
+          <p className={styles.garantie}>
+            <Icone nom="cadenas" taille={14} />
+            <span>{t('parametres.cle.garantie')}</span>
+          </p>
           {etat.cle !== 'absente' && (
             <div className={styles.actions}>
               <Bouton variante="danger" onClick={() => setConfirmer(true)}>
-                <Icone nom="poubelle" taille={18} />
+                <Icone nom="poubelle" taille={16} />
                 {t('parametres.cle.supprimer')}
               </Bouton>
             </div>
@@ -191,7 +194,7 @@ export function SectionSteam({ etat }: { etat: EtatApp }) {
           <>
             <Bouton onClick={() => setConfirmer(false)}>{t('commun.annuler')}</Bouton>
             <Bouton variante="danger" aria-disabled={suppression} onClick={() => void (suppression || supprimer())}>
-              {suppression && <Attente />}
+              {suppression && <Attente taille={16} />}
               {t('parametres.cle.supprimer')}
             </Bouton>
           </>

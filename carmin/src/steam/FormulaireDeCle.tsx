@@ -78,28 +78,28 @@ export function FormulaireDeCle({ onResultat }: { onResultat?: (resultat: Result
             if (forme) setForme(false);
           }}
         />
-        <Bouton variante="principal" type="submit" disabled={envoi || cle.trim() === ''} style={{ marginBottom: erreurAffichee === null ? 0 : 26 }}>
-          {envoi && <Attente />}
+        <Bouton variante="principal" type="submit" disabled={envoi || cle.trim() === ''} style={{ marginBottom: erreurAffichee === null ? 0 : 25 }}>
+          {envoi && <Attente taille={16} />}
           {envoi ? t('cle.verification') : t('cle.enregistrer')}
         </Bouton>
       </div>
       <div aria-live="polite">
         {resultat?.etat === 'valide' && (
           <p className={`${styles.verdict} ${styles.accepte}`}>
-            <Icone nom="coche" taille={18} />
+            <Icone nom="coche" taille={16} />
             <span>{resultat.pseudo === null ? t('cle.acceptee') : t('cle.acceptee_pour', { pseudo: resultat.pseudo })}</span>
           </p>
         )}
         {resultat?.etat === 'non_verifiee' && (
           <p className={`${styles.verdict} ${styles.attente}`}>
-            <Icone nom="horloge" taille={18} />
+            <Icone nom="horloge" taille={16} />
             <span>{t('cle.non_verifiee')}</span>
           </p>
         )}
       </div>
       <button type="button" className={styles.lien} onClick={() => void tenter(() => coeur.ouvrir_un_lien(ADRESSE_DE_LA_CLE))}>
         {t('cle.ou_la_trouver')}
-        <Icone nom="lien_externe" taille={16} />
+        <Icone nom="lien_externe" taille={14} />
       </button>
     </form>
   );

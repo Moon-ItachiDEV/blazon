@@ -61,11 +61,11 @@ function Dossiers({ dossiers }: { dossiers: string[] }) {
             {dossiers.map((dossier, indice) => (
               <li key={dossier} className={styles.rangee}>
                 <span className={styles.rangeeIcone}>
-                  <Icone nom="dossier" />
+                  <Icone nom="dossier" taille={18} />
                 </span>
                 <span className={styles.rangeeTexte}>{dossier}</span>
-                <Bouton carre data-retrait aria-label={t('parametres.dossiers.retirer', { chemin: dossier })} onClick={() => retirer(dossier, indice)}>
-                  <Icone nom="poubelle" taille={18} />
+                <Bouton variante="texte" carre data-retrait aria-label={t('parametres.dossiers.retirer', { chemin: dossier })} onClick={() => retirer(dossier, indice)}>
+                  <Icone nom="poubelle" taille={16} />
                 </Bouton>
               </li>
             ))}
@@ -87,7 +87,7 @@ function Dossiers({ dossiers }: { dossiers: string[] }) {
           }}
         />
         <Bouton type="submit">
-          <Icone nom="plus" taille={18} />
+          <Icone nom="plus" taille={16} />
           {t('parametres.dossiers.ajouter')}
         </Bouton>
       </form>
@@ -112,25 +112,28 @@ function Analyse({ etat }: { etat: EtatApp }) {
 
   return (
     <Section titre={t('parametres.analyse.titre')}>
-      <div className={styles.pile}>
-        <p className={`${styles.texte} chiffres`} role="status">
-          {resume}
-        </p>
-        <div className={styles.actions}>
+      <Carte>
+        <LigneDeReglage
+          nom={t('bibliotheque.vide.analyser')}
+          aide={
+            <span className="chiffres" role="status">
+              {resume}
+            </span>
+          }
+        >
           {/* `aria-disabled` plutôt que `disabled` : le bouton garde le focus clavier pendant l'analyse. */}
           <Bouton aria-disabled={analyse.en_cours} onClick={() => void (analyse.en_cours || tenter(() => coeur.relancer_le_scan()))}>
-            {analyse.en_cours ? <Attente /> : <Icone nom="rafraichir" taille={18} />}
-            {analyse.en_cours ? t('parametres.analyse.en_cours_bouton') : t('bibliotheque.vide.analyser')}
+            {analyse.en_cours ? <Attente taille={16} /> : <Icone nom="rafraichir" taille={16} />}
+            {analyse.en_cours ? t('parametres.analyse.en_cours_bouton') : t('parametres.analyse.relancer')}
           </Bouton>
-        </div>
-        <p className={styles.discret}>{t('parametres.ajout_manuel')}</p>
-        <div className={styles.actions}>
+        </LigneDeReglage>
+        <LigneDeReglage nom={t('parametres.ajout_manuel.action')} aide={t('parametres.ajout_manuel')}>
           <Lien className={classeBouton()} vers={{ ecran: 'ajout' }}>
-            <Icone nom="plus" taille={18} />
-            {t('parametres.ajout_manuel.action')}
+            <Icone nom="plus" taille={16} />
+            {t('parametres.dossiers.ajouter')}
           </Lien>
-        </div>
-      </div>
+        </LigneDeReglage>
+      </Carte>
     </Section>
   );
 }
@@ -148,33 +151,28 @@ function jeuxDApercu(jeux: readonly JeuResume[]): JeuResume[] {
 }
 
 /**
- * L'aperçu vivant de l'affichage : de vraies jaquettes de la bibliothèque, à la taille choisie (aux
- * trois quarts), qui suivent le curseur pendant qu'on le glisse ; en vue liste, les mêmes jeux en lignes.
+ * L'aperçu de l'affichage : de vraies jaquettes de la bibliothèque, à la taille choisie (à moitié),
+ * qui suivent le curseur pendant qu'on le glisse ; en vue liste, les mêmes jeux en lignes.
  */
 function ApercuDAffichage({ taille, vue }: { taille: number; vue: ReglagesDAffichage['vue'] }) {
-  const { t, langue } = useTexte();
+  const { langue } = useTexte();
   const jeux = useApplication((a) => a.jeux);
   const choisis = useMemo(() => (jeux === null ? [] : jeuxDApercu(jeux)), [jeux]);
   if (choisis.length === 0) return null;
   return (
     <div className={styles.apercuAffichage} data-vue={vue} style={{ '--t': `${taille}px` } as CSSProperties} aria-hidden="true">
-      <span className={styles.apercuEtiquette}>
-        <span className={styles.apercuPoint} />
-        {t('parametres.apercu')}
-        <span className="chiffres">{vue === 'grille' ? t('parametres.taille.valeur', { n: taille }) : t('parametres.vue.liste')}</span>
-      </span>
       {vue === 'grille' ? (
-        <ul key="grille" className={styles.apercuGrille}>
-          {choisis.map((jeu, index) => (
-            <li key={jeu.id} style={{ '--i': index } as CSSProperties}>
+        <ul className={styles.apercuGrille}>
+          {choisis.map((jeu) => (
+            <li key={jeu.id}>
               <Jaquette jeu={jeu} className={styles.apercuJaquette ?? ''} />
             </li>
           ))}
         </ul>
       ) : (
-        <ul key="liste" className={styles.apercuListe}>
-          {choisis.slice(0, 4).map((jeu, index) => (
-            <li key={jeu.id} style={{ '--i': index } as CSSProperties}>
+        <ul className={styles.apercuListe}>
+          {choisis.slice(0, 3).map((jeu) => (
+            <li key={jeu.id}>
               <Jaquette jeu={jeu} className={styles.apercuMini ?? ''} />
               <span className={styles.apercuTitre}>{jeu.titre}</span>
               <span className={`${styles.apercuTemps} chiffres`}>{formaterTempsDeJeu(jeu.temps.minutes_total, langue)}</span>
@@ -266,7 +264,7 @@ function JeuxMasques({ montrer }: { montrer: boolean }) {
         </Carte>
         {masques === null ? (
           <div role="status" aria-label={t('commun.chargement')}>
-            <Squelette hauteur="120px" rayon="var(--rayon-l)" style={{ display: 'block' }} />
+            <Squelette hauteur="60px" rayon="var(--rayon-l)" style={{ display: 'block' }} />
           </div>
         ) : (
           <>
@@ -293,7 +291,7 @@ function JeuxMasques({ montrer }: { montrer: boolean }) {
                           void definirMasque(jeu.id, false);
                         }}
                       >
-                        <Icone nom="oeil" taille={18} />
+                        <Icone nom="oeil" taille={16} />
                         {t('fiche.ne_plus_masquer')}
                       </Bouton>
                     </li>

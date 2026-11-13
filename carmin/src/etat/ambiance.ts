@@ -8,17 +8,8 @@ import { creerMagasin } from './magasin';
  */
 export const ambiance = creerMagasin<string | null>(null);
 
-/**
- * L'image du dernier jeu mis à l'écran : `Decor` la pose en très grand et très floue derrière toute
- * l'application, et les panneaux de verre dépoli en laissent passer les couleurs.
- */
-export const imageAmbiance = creerMagasin<string | null>(null);
-
-export function useAmbiance(couleur: string | null, image: string | null = null): void {
+export function useAmbiance(couleur: string | null): void {
   useEffect(() => {
     if (couleur !== null) ambiance.ecrire(couleur);
   }, [couleur]);
-  useEffect(() => {
-    if (image !== null) imageAmbiance.ecrire(image);
-  }, [image]);
 }

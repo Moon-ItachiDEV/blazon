@@ -1,12 +1,10 @@
-import { useEffect, useId, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
-import type { ErreurApp, JeuResume, Source } from '../../contrat/types';
+import { useEffect, useMemo, useState } from 'react';
+import type { ErreurApp, JeuResume } from '../../contrat/types';
 import { Bouton, classeBouton } from '../composants/Bouton';
 import { aSignaler, classeActionDeNote, iconeDErreur, Message, Note, Squelette } from '../composants/Etats';
-import { Icone, type NomDIcone } from '../composants/Icone';
+import { Icone } from '../composants/Icone';
 import { Jaquette } from '../composants/Jaquette';
-import { NombreAnime } from '../composants/NombreAnime';
 import { Page } from '../composants/Page';
-import { suiviDeListe } from '../composants/pointeur';
 import { coeur } from '../coeur';
 import { vautUnNouvelEssai } from '../coeur/erreurs';
 import { signaler, tenter, useApplication } from '../etat/application';
@@ -21,15 +19,6 @@ import styles from './Profil.module.css';
 
 /** Erreurs que le joueur règle dans la section Steam des paramètres (clé) ou dans Steam (confidentialité). */
 const SE_REGLE_DANS_STEAM = new Set<ErreurApp['code']>(['cle_absente', 'cle_refusee', 'profil_prive']);
-
-/** Couleur de chaque source dans l'anneau : des teintes du thème, jamais d'orange. */
-const COULEUR_DE_SOURCE: Record<Source, string> = {
-  steam: 'var(--accent-3)',
-  epic: 'var(--accent-2)',
-  gog: 'var(--cyan)',
-  ea: 'var(--accent)',
-  manuel: 'var(--succes)',
-};
 
 /** Les derniers jeux lancés, du plus récent au plus ancien. */
 function derniersLances(jeux: readonly JeuResume[], nombre: number): JeuResume[] {
@@ -56,301 +45,142 @@ function LienVersLesReglages() {
   );
 }
 
-// ───────────────────────────── Carte de joueur
+// ───────────────────────────── Le joueur
 
-interface ProprietesCarte {
-  pseudo: string | null;
-  avatar: string | null;
-  steamid: string | null;
-  plusieursComptes: boolean;
-  jeux: JeuResume[] | null;
-}
-
-/**
- * L'en-tête du profil, comme une carte de joueur esport : la bannière des jeux les plus joués qui défile
- * lentement, l'avatar dans un anneau néon, le pseudo et la part de la
- * bibliothèque déjà explorée.
- */
-function CarteDeJoueur({ pseudo, avatar, steamid, plusieursComptes, jeux }: ProprietesCarte) {
-  const { t, langue } = useTexte();
-  const banniere = useMemo(() => (jeux === null ? [] : plusJoues(jeux, 14).filter((jeu) => jeu.jaquette !== null)), [jeux]);
-  const chiffres = useMemo(() => (jeux === null ? null : calculerLesChiffres(jeux)), [jeux]);
-  const lances = chiffres === null ? 0 : chiffres.jeux - chiffres.jamais_lances;
-  const exploree = chiffres === null || chiffres.jeux === 0 ? 0 : (lances / chiffres.jeux) * 100;
-
+/** Qui est là : l'avatar, le pseudo, et le lien pour suivre un autre compte quand le PC en connaît plusieurs. */
+function Identite({ pseudo, avatar, steamid, plusieursComptes }: { pseudo: string | null; avatar: string | null; steamid: string | null; plusieursComptes: boolean }) {
+  const { t } = useTexte();
   return (
-    <div className={styles.carteJoueur}>
-      {banniere.length > 0 && (
-        <div className={styles.banniere} aria-hidden="true">
-          {/* La liste est écrite deux fois : quand la première moitié est sortie, la boucle repart sans saut. */}
-          <div className={styles.defile} style={{ '--nombre': banniere.length } as CSSProperties}>
-            {[...banniere, ...banniere].map((jeu, i) => (
-              <span key={`${jeu.id}-${i}`} className={styles.affichette}>
-                <img src={jeu.jaquette ?? undefined} alt="" loading="lazy" decoding="async" draggable={false} />
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-      <div className={styles.voileJoueur} aria-hidden="true" />
-
-      <div className={styles.anneau}>
-        <Avatar image={avatar} pseudo={pseudo} taille={132} />
-      </div>
-
-      <div className={styles.identite}>
-        <div className={styles.pilules}>
-          {steamid !== null && (
-            <span className={styles.pilule}>
-              <span className={styles.enLigne} aria-hidden="true" />
-              {t('profil.compte_steam')}
-            </span>
-          )}
-        </div>
+    <div className={styles.identite}>
+      <Avatar image={avatar} pseudo={pseudo} taille={72} />
+      <div className={styles.identiteTexte}>
         <p className={pseudo === null ? styles.pseudoAbsent : styles.pseudo}>{pseudo ?? t('profil.pseudo_inconnu')}</p>
-        {plusieursComptes && (
-          <Lien className={classeBouton({ variante: 'texte' }, styles.changer)} vers={{ ecran: 'parametres', section: 'steam' }}>
-            {t('profil.changer_de_compte')}
-          </Lien>
-        )}
+        <p className={styles.compte}>
+          {steamid !== null && <span>{t('profil.compte_steam')}</span>}
+          {plusieursComptes && (
+            <Lien className={styles.changer} vers={{ ecran: 'parametres', section: 'steam' }}>
+              {t('profil.changer_de_compte')}
+            </Lien>
+          )}
+        </p>
       </div>
-
-      {chiffres !== null && chiffres.jeux > 0 && (
-        <div className={styles.exploree}>
-          <Cadran part={exploree} taille={128}>
-            <span className={`${styles.cadranValeur} chiffres`}>
-              <NombreAnime valeur={exploree} format={(v) => formaterPourcentage(v, langue)} />
-            </span>
-          </Cadran>
-          <p className={styles.exploreeTitre}>{t('profil.exploree')}</p>
-          <p className={styles.exploreeDetail}>{t('profil.exploree.detail', { lances: formaterNombre(lances, langue), total: formaterNombre(chiffres.jeux, langue) })}</p>
-        </div>
-      )}
     </div>
   );
 }
 
-/** Un cadran circulaire qui se remplit au dégradé. Décoratif : la valeur est écrite au centre. */
-function Cadran({ part, taille, children }: { part: number; taille: number; children: ReactNode }) {
-  const id = useId();
-  return (
-    <div className={styles.cadran} style={{ width: taille, height: taille }}>
-      <svg viewBox="0 0 100 100" aria-hidden="true">
-        <defs>
-          <linearGradient id={`${id}-d`} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor="#a3102f" />
-            <stop offset="0.5" stopColor="#e3173f" />
-            <stop offset="1" stopColor="#ff3f86" />
-          </linearGradient>
-        </defs>
-        <circle className={styles.cadranPiste} cx="50" cy="50" r="44" />
-        <circle className={styles.cadranPlein} cx="50" cy="50" r="44" pathLength={100} stroke={`url(#${id}-d)`} style={{ '--part': Math.max(0.5, part) } as CSSProperties} />
-      </svg>
-      <div className={styles.cadranCentre}>{children}</div>
-    </div>
-  );
-}
+// ───────────────────────────── Les chiffres
 
-// ───────────────────────────── Médailles
-
-interface Medaille {
-  cle: string;
-  icone: NomDIcone;
-  valeur: ReactNode;
-  libelle: string;
-}
-
-/** Une médaille ronde : son cercle se trace, l'icône surgit, le chiffre compte. */
-function MedailleHexagonale({ medaille, rang }: { medaille: Medaille; rang: number }) {
-  const id = useId();
-  return (
-    <div className={styles.medaille} data-medaille="" style={{ '--rang': rang } as CSSProperties}>
-      <span className={styles.hexagone} aria-hidden="true">
-        <svg viewBox="0 0 100 112">
-          <defs>
-            <linearGradient id={`${id}-t`} x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stopColor="#a3102f" />
-              <stop offset="0.5" stopColor="#e3173f" />
-              <stop offset="1" stopColor="#ff3f86" />
-            </linearGradient>
-          </defs>
-          <circle className={styles.hexFond} cx="50" cy="56" r="46" />
-          <circle className={styles.hexTrait} cx="50" cy="56" r="46" pathLength={1} stroke={`url(#${id}-t)`} transform="rotate(-90 50 56)" />
-          <circle className={styles.hexInterieur} cx="50" cy="56" r="36" />
-        </svg>
-        <span className={styles.hexIcone}>
-          <Icone nom={medaille.icone} taille={26} />
-        </span>
-      </span>
-      <dt className={styles.medailleLibelle}>{medaille.libelle}</dt>
-      <dd className={`${styles.medailleValeur} chiffres`}>{medaille.valeur}</dd>
-    </div>
-  );
-}
-
-function Medailles({ chiffres }: { chiffres: Chiffres }) {
+/** La bibliothèque en chiffres : la valeur, puis ce qu'elle compte. Ni icône ni cadre. */
+function LesChiffres({ chiffres }: { chiffres: Chiffres }) {
   const { t, tp, langue } = useTexte();
-  const suivi = useMemo(() => suiviDeListe('[data-medaille]'), []);
   const part = formaterPourcentage(chiffres.part_jamais_lances, langue);
   const nombre = (valeur: number) => formaterNombre(valeur, langue);
   const temps = (minutes: number) => formaterTempsDeJeu(minutes, langue);
-  const medailles: Medaille[] = [
-    { cle: 'jeux', icone: 'grille', valeur: <NombreAnime valeur={chiffres.jeux} format={nombre} />, libelle: tp('profil.chiffre.jeux', chiffres.jeux) },
-    { cle: 'installes', icone: 'telechargement', valeur: <NombreAnime valeur={chiffres.installes} format={nombre} />, libelle: tp('profil.chiffre.installes', chiffres.installes) },
-    { cle: 'temps', icone: 'horloge', valeur: <NombreAnime valeur={chiffres.minutes_total} format={temps} />, libelle: t('profil.chiffre.temps') },
-    ...(chiffres.minutes_2sem === null ? [] : [{ cle: '2sem', icone: 'manette' as const, valeur: <NombreAnime valeur={chiffres.minutes_2sem} format={temps} />, libelle: t('profil.chiffre.temps_2sem') }]),
-    { cle: 'jamais', icone: 'oeil_barre', valeur: <NombreAnime valeur={chiffres.jamais_lances} format={nombre} />, libelle: tp('profil.chiffre.jamais_lances', chiffres.jamais_lances, { part }) },
-    ...(chiffres.succes_debloques === null ? [] : [{ cle: 'succes', icone: 'trophee' as const, valeur: <NombreAnime valeur={chiffres.succes_debloques} format={nombre} />, libelle: tp('profil.chiffre.succes', chiffres.succes_debloques) }]),
-    { cle: 'favoris', icone: 'etoile', valeur: <NombreAnime valeur={chiffres.favoris} format={nombre} />, libelle: tp('profil.chiffre.favoris', chiffres.favoris) },
-    ...(chiffres.installes > 0 ? [{ cle: 'taille', icone: 'dossier' as const, valeur: formaterTaille(chiffres.taille_installee, langue), libelle: t('profil.chiffre.taille') }] : []),
+  const lignes: { cle: string; valeur: string; libelle: string }[] = [
+    { cle: 'jeux', valeur: nombre(chiffres.jeux), libelle: tp('profil.chiffre.jeux', chiffres.jeux) },
+    { cle: 'installes', valeur: nombre(chiffres.installes), libelle: tp('profil.chiffre.installes', chiffres.installes) },
+    { cle: 'temps', valeur: temps(chiffres.minutes_total), libelle: t('profil.chiffre.temps') },
+    ...(chiffres.minutes_2sem === null ? [] : [{ cle: '2sem', valeur: temps(chiffres.minutes_2sem), libelle: t('profil.chiffre.temps_2sem') }]),
+    { cle: 'jamais', valeur: nombre(chiffres.jamais_lances), libelle: tp('profil.chiffre.jamais_lances', chiffres.jamais_lances, { part }) },
+    ...(chiffres.succes_debloques === null ? [] : [{ cle: 'succes', valeur: nombre(chiffres.succes_debloques), libelle: tp('profil.chiffre.succes', chiffres.succes_debloques) }]),
+    { cle: 'favoris', valeur: nombre(chiffres.favoris), libelle: tp('profil.chiffre.favoris', chiffres.favoris) },
+    ...(chiffres.installes > 0 ? [{ cle: 'taille', valeur: formaterTaille(chiffres.taille_installee, langue), libelle: t('profil.chiffre.taille') }] : []),
   ];
   return (
-    <dl className={styles.medailles} data-nombre={medailles.length} {...suivi}>
-      {medailles.map((medaille, i) => (
-        <MedailleHexagonale key={medaille.cle} medaille={medaille} rang={i} />
+    <dl className={styles.chiffres}>
+      {lignes.map((ligne) => (
+        <div key={ligne.cle} className={styles.chiffre}>
+          <dt>{ligne.libelle}</dt>
+          <dd className="chiffres">{ligne.valeur}</dd>
+        </div>
       ))}
     </dl>
   );
 }
 
-// ───────────────────────────── Les plus joués
+// ───────────────────────────── Les classements
 
-function Podium({ jeux, total }: { jeux: JeuResume[]; total: number }) {
+/** Une ligne de classement : le jeu, son temps, et une barre fine qui le compare au premier. */
+function LigneDeJeu({ jeu, minutes, maximum, rang }: { jeu: JeuResume; minutes: number; maximum: number; rang?: number }) {
   const { t, langue } = useTexte();
-  const premiers = jeux.slice(0, 3);
-  const suivants = jeux.slice(3);
-  const maximum = jeux[0]?.temps.minutes_total ?? 1;
   return (
-    <>
-      <ol className={styles.podium}>
-        {premiers.map((jeu, index) => (
-          <li key={jeu.id} className={styles.marche} data-rang={index + 1}>
-            <Lien className={styles.lienPodium} vers={{ ecran: 'jeu', id_jeu: jeu.id }}>
-              <span className={styles.couronne} aria-hidden="true">
-                {index === 0 && <span className={styles.halo} />}
-                <Jaquette jeu={jeu} prioritaire className={styles.jaquettePodium ?? ''} />
-              </span>
-              <span className={styles.titrePodium}>{jeu.titre}</span>
-              <span className={`${styles.tempsPodium} chiffres`}>{formaterTempsDeJeu(jeu.temps.minutes_total, langue)}</span>
-              <span className={styles.partPodium}>{t('profil.plus_joues.part', { part: formaterPourcentage(total === 0 ? 0 : (jeu.temps.minutes_total / total) * 100, langue) })}</span>
-              <span className={styles.socle}>
-                <span className={`${styles.numero} chiffres`}>
-                  <span aria-hidden="true">{index + 1}</span>
-                  <span className="hors-ecran">{t('profil.plus_joues.rang', { n: index + 1 })}</span>
-                </span>
-              </span>
-            </Lien>
-          </li>
-        ))}
-      </ol>
-      {suivants.length > 0 && (
-        <ol className={styles.barres} start={4}>
-          {suivants.map((jeu, index) => (
-            <li key={jeu.id} style={{ '--rang': index } as CSSProperties}>
-              <Lien className={styles.ligneBarre} vers={{ ecran: 'jeu', id_jeu: jeu.id }}>
-                <span className={`${styles.rangBarre} chiffres`}>
-                  <span aria-hidden="true">{index + 4}</span>
-                  <span className="hors-ecran">{t('profil.plus_joues.rang', { n: index + 4 })}</span>
-                </span>
-                <Jaquette jeu={jeu} className={styles.miniature ?? ''} />
-                <span className={styles.barreCorps}>
-                  <span className={styles.barreHaut}>
-                    <span className={styles.titreDuJeu}>{jeu.titre}</span>
-                    <span className={`${styles.temps} chiffres`}>{formaterTempsDeJeu(jeu.temps.minutes_total, langue)}</span>
-                  </span>
-                  <span className={styles.piste} aria-hidden="true">
-                    <span className={styles.barre} style={{ width: `${Math.max(3, (jeu.temps.minutes_total / maximum) * 100)}%` }} />
-                  </span>
-                </span>
-              </Lien>
-            </li>
-          ))}
-        </ol>
-      )}
-    </>
+    <li>
+      <Lien className={styles.ligne} vers={{ ecran: 'jeu', id_jeu: jeu.id }}>
+        {rang !== undefined && (
+          <span className={`${styles.rang} chiffres`}>
+            <span aria-hidden="true">{rang}</span>
+            <span className="hors-ecran">{t('profil.plus_joues.rang', { n: rang })}</span>
+          </span>
+        )}
+        <Jaquette jeu={jeu} className={styles.miniature ?? ''} />
+        <span className={styles.ligneCorps}>
+          <span className={styles.ligneHaut}>
+            <span className={styles.ligneNom}>{jeu.titre}</span>
+            <span className={`${styles.ligneValeur} chiffres`}>{formaterTempsDeJeu(minutes, langue)}</span>
+          </span>
+          <Barre part={maximum === 0 ? 0 : minutes / maximum} />
+        </span>
+      </Lien>
+    </li>
   );
 }
 
-// ───────────────────────────── Sources
-
-function AnneauDesSources({ sources, jeux }: { sources: PartDeSource[]; jeux: number }) {
-  const { t, tp, langue } = useTexte();
-  const somme = sources.reduce((s, part) => s + part.jeux, 0);
-  // Une petite source resterait invisible : chaque arc a au moins 2 % du tour, les plus grosses cèdent la différence.
-  const minimum = 2;
-  const brutes = sources.map((s) => (somme === 0 ? 0 : (s.jeux / somme) * 100));
-  const petites = brutes.reduce((s, p) => s + Math.max(0, minimum - p), 0);
-  const grosses = brutes.filter((p) => p >= minimum).reduce((s, p) => s + p, 0);
-  const arcs = brutes.map((p) => (p < minimum ? minimum : p - (grosses === 0 ? 0 : (petites * p) / grosses)));
-  const ecart = sources.length > 1 ? 1.2 : 0;
-  let debut = 0;
+/** Décorative : la valeur est écrite juste au-dessus. Jamais vide, pour que la ligne garde sa barre. */
+function Barre({ part }: { part: number }) {
   return (
-    <div className={styles.sourcesCorps}>
-      <div className={styles.anneauSources}>
-        <svg viewBox="0 0 120 120" aria-hidden="true">
-          <circle className={styles.cadranPiste} cx="60" cy="60" r="48" />
-          {sources.map((s, i) => {
-            const arc = arcs[i] ?? 0;
-            const style = { '--part': Math.max(0.4, arc - ecart), '--debut': `${(debut / 100) * 360}deg`, '--rang': i, stroke: COULEUR_DE_SOURCE[s.source] } as CSSProperties;
-            debut += arc;
-            return <circle key={s.source} className={styles.arc} cx="60" cy="60" r="48" pathLength={100} style={style} />;
-          })}
-        </svg>
-        <div className={styles.anneauCentre}>
-          <span className={`${styles.anneauNombre} chiffres`}>
-            <NombreAnime valeur={jeux} format={(v) => formaterNombre(v, langue)} />
-          </span>
-          <span className={styles.anneauLibelle}>{tp('profil.sources.total', jeux)}</span>
+    <span className={styles.piste} aria-hidden="true">
+      <span className={styles.barre} style={{ width: `${Math.min(100, Math.max(2, part * 100))}%` }} />
+    </span>
+  );
+}
+
+/** Combien de jeux viennent de chaque magasin : une ligne par source, comme les classements d'à côté. */
+function Sources({ sources, jeux }: { sources: PartDeSource[]; jeux: number }) {
+  const { t, langue } = useTexte();
+  const maximum = sources.reduce((plus, part) => Math.max(plus, part.jeux), 0);
+  return (
+    <dl className={styles.sources}>
+      {sources.map((s) => (
+        <div key={s.source} className={styles.source}>
+          <dt>{t(`sources.${s.source}`)}</dt>
+          <dd className="chiffres">
+            {formaterNombre(s.jeux, langue)}
+            <span className={styles.partSource}>{formaterPourcentage(jeux === 0 ? 0 : (s.jeux / jeux) * 100, langue)}</span>
+          </dd>
+          <Barre part={maximum === 0 ? 0 : s.jeux / maximum} />
         </div>
-      </div>
-      <dl className={`cascade ${styles.legende}`}>
-        {sources.map((s) => (
-          <div key={s.source} className={styles.source} style={{ '--couleur-source': COULEUR_DE_SOURCE[s.source] } as CSSProperties}>
-            <dt>
-              <span className={styles.pastille} aria-hidden="true" />
-              {t(`sources.${s.source}`)}
-            </dt>
-            <dd className="chiffres">
-              {formaterNombre(s.jeux, langue)}
-              <span className={styles.partSource}>{formaterPourcentage(jeux === 0 ? 0 : (s.jeux / jeux) * 100, langue)}</span>
-            </dd>
-          </div>
-        ))}
-      </dl>
-    </div>
+      ))}
+    </dl>
   );
 }
 
 // ───────────────────────────── Activité récente
 
-function Frise({ jeux }: { jeux: JeuResume[] }) {
+/** Les derniers jeux lancés : leur jaquette, puis quand et combien de temps au total. */
+function Activite({ jeux }: { jeux: JeuResume[] }) {
   const { t, langue } = useTexte();
   const maintenant = useMaintenant();
   if (jeux.length === 0) return <p className={styles.discret}>{t('profil.activite.aucune')}</p>;
   return (
-    <div className={styles.frise}>
-      <span className={styles.fil} aria-hidden="true" />
-      <ol className={styles.etapes}>
-        {jeux.map((jeu, i) => (
-          <li key={jeu.id} className={styles.etape} style={{ '--rang': i } as CSSProperties}>
-            <Lien className={styles.lienEtape} vers={{ ecran: 'jeu', id_jeu: jeu.id }}>
-              <Jaquette jeu={jeu} className={styles.jaquetteEtape ?? ''} />
-              <span className={styles.jalon} aria-hidden="true" />
-              <span className={styles.quand}>{jeu.temps.dernier_lancement === null ? '' : formaterDateHeure(jeu.temps.dernier_lancement, langue, maintenant)}</span>
-              <span className={styles.titreEtape}>{jeu.titre}</span>
-              <span className={styles.totalEtape}>{t('profil.activite.total', { temps: formaterTempsDeJeu(jeu.temps.minutes_total, langue) })}</span>
-            </Lien>
-          </li>
-        ))}
-      </ol>
-    </div>
+    <ol className={styles.activite}>
+      {jeux.map((jeu) => (
+        <li key={jeu.id}>
+          <Lien className={styles.etape} vers={{ ecran: 'jeu', id_jeu: jeu.id }}>
+            <Jaquette jeu={jeu} className={styles.etapeJaquette ?? ''} />
+            <span className={styles.etapeTitre}>{jeu.titre}</span>
+            <span className={styles.etapeDetail}>{jeu.temps.dernier_lancement === null ? '' : formaterDateHeure(jeu.temps.dernier_lancement, langue, maintenant)}</span>
+            <span className={styles.etapeDetail}>{t('profil.activite.total', { temps: formaterTempsDeJeu(jeu.temps.minutes_total, langue) })}</span>
+          </Lien>
+        </li>
+      ))}
+    </ol>
   );
 }
 
 // ───────────────────────────── L'écran
 
 function Bibliotheque({ jeux }: { jeux: JeuResume[] }) {
-  const { t, tp, langue } = useTexte();
+  const { t, tp } = useTexte();
   const chiffres = useMemo(() => calculerLesChiffres(jeux), [jeux]);
   const premiers = useMemo(() => plusJoues(jeux, 8), [jeux]);
   const sources = useMemo(() => repartitionParSource(jeux), [jeux]);
@@ -378,58 +208,53 @@ function Bibliotheque({ jeux }: { jeux: JeuResume[] }) {
   return (
     <>
       <section className={styles.bloc} aria-labelledby="profil-chiffres">
-        <h2 id="profil-chiffres" className={`titre-section ${styles.titreDeSection}`}>
+        <h2 id="profil-chiffres" className="hors-ecran">
           {t('profil.chiffres.titre')}
         </h2>
-        <Medailles chiffres={chiffres} />
+        <LesChiffres chiffres={chiffres} />
         {masques > 0 && <p className={styles.discret}>{tp('profil.masques', masques)}</p>}
       </section>
 
       <div className={styles.colonnes}>
-        <section className={`${styles.panneau} ${styles.principale}`} aria-labelledby="profil-plus-joues">
+        <section className={styles.principale} aria-labelledby="profil-plus-joues">
           <h2 id="profil-plus-joues" className={`titre-section ${styles.titreDeSection}`}>
             {t('profil.plus_joues')}
           </h2>
-          {premiers.length === 0 ? <p className={styles.discret}>{t('profil.plus_joues.aucun')}</p> : <Podium jeux={premiers} total={chiffres.minutes_total} />}
+          {premiers.length === 0 ? (
+            <p className={styles.discret}>{t('profil.plus_joues.aucun')}</p>
+          ) : (
+            <ol className={styles.lignes}>
+              {premiers.map((jeu, index) => (
+                <LigneDeJeu key={jeu.id} jeu={jeu} minutes={jeu.temps.minutes_total} maximum={premiers[0]?.temps.minutes_total ?? 0} rang={index + 1} />
+              ))}
+            </ol>
+          )}
         </section>
 
         <div className={styles.laterale}>
-          <section className={styles.panneau} aria-labelledby="profil-sources">
-            <h2 id="profil-sources" className={`titre-section ${styles.titreDeSection}`}>
-              {t('profil.sources.titre')}
-            </h2>
-            <AnneauDesSources sources={sources} jeux={chiffres.jeux} />
-            <p className={styles.discret}>{t('profil.sources.texte')}</p>
-          </section>
           {chiffres.minutes_2sem !== null && (
-            <section className={styles.panneau} aria-labelledby="profil-deux-semaines">
+            <section aria-labelledby="profil-deux-semaines">
               <h2 id="profil-deux-semaines" className={`titre-section ${styles.titreDeSection}`}>
                 {t('profil.deux_semaines.titre')}
               </h2>
               {recemment.length === 0 ? (
                 <p className={styles.discret}>{t('profil.deux_semaines.aucun')}</p>
               ) : (
-                <ol className={styles.barres}>
-                  {recemment.map((jeu, index) => (
-                    <li key={jeu.id} style={{ '--rang': index } as CSSProperties}>
-                      <Lien className={styles.ligneBarre} vers={{ ecran: 'jeu', id_jeu: jeu.id }}>
-                        <Jaquette jeu={jeu} className={styles.miniature ?? ''} />
-                        <span className={styles.barreCorps}>
-                          <span className={styles.barreHaut}>
-                            <span className={styles.titreDuJeu}>{jeu.titre}</span>
-                            <span className={`${styles.temps} chiffres`}>{formaterTempsDeJeu(jeu.temps.minutes_2sem ?? 0, langue)}</span>
-                          </span>
-                          <span className={styles.piste} aria-hidden="true">
-                            <span className={styles.barre} style={{ width: `${Math.max(3, ((jeu.temps.minutes_2sem ?? 0) / (recemment[0]?.temps.minutes_2sem ?? 1)) * 100)}%` }} />
-                          </span>
-                        </span>
-                      </Lien>
-                    </li>
+                <ol className={styles.lignes}>
+                  {recemment.map((jeu) => (
+                    <LigneDeJeu key={jeu.id} jeu={jeu} minutes={jeu.temps.minutes_2sem ?? 0} maximum={recemment[0]?.temps.minutes_2sem ?? 0} />
                   ))}
                 </ol>
               )}
             </section>
           )}
+          <section aria-labelledby="profil-sources">
+            <h2 id="profil-sources" className={`titre-section ${styles.titreDeSection}`}>
+              {t('profil.sources.titre')}
+            </h2>
+            <Sources sources={sources} jeux={chiffres.jeux} />
+            {sources.length > 1 && <p className={styles.discret}>{t('profil.sources.texte')}</p>}
+          </section>
         </div>
       </div>
 
@@ -437,7 +262,7 @@ function Bibliotheque({ jeux }: { jeux: JeuResume[] }) {
         <h2 id="profil-activite" className={`titre-section ${styles.titreDeSection}`}>
           {t('profil.activite.titre')}
         </h2>
-        <Frise jeux={recents} />
+        <Activite jeux={recents} />
       </section>
     </>
   );
@@ -445,11 +270,11 @@ function Bibliotheque({ jeux }: { jeux: JeuResume[] }) {
 
 function Chargement() {
   return (
-    <div className={styles.medailles} aria-hidden="true">
+    <div className={styles.chiffres} aria-hidden="true">
       {[0, 1, 2, 3].map((n) => (
-        <div key={n} className={styles.medaille}>
-          <Squelette hauteur="72px" largeur="64px" style={{ display: 'block' }} />
-          <Squelette hauteur="16px" largeur="100px" style={{ display: 'block', marginTop: 8 }} />
+        <div key={n} className={styles.chiffre}>
+          <Squelette hauteur="14px" largeur="120px" style={{ display: 'block', marginTop: 8 }} />
+          <Squelette hauteur="30px" largeur="90px" style={{ display: 'block' }} />
         </div>
       ))}
     </div>
@@ -497,12 +322,12 @@ export function EcranProfil() {
       }
     >
       {profil.vue === 'chargement' ? (
-        <div className={styles.carteJoueur} role="status" aria-label={t('commun.chargement')}>
-          <Squelette largeur="132px" hauteur="132px" rayon="50%" />
-          <Squelette largeur="220px" hauteur="36px" />
+        <div className={styles.identite} role="status" aria-label={t('commun.chargement')}>
+          <Squelette largeur="72px" hauteur="72px" rayon="50%" />
+          <Squelette largeur="200px" hauteur="30px" />
         </div>
       ) : (
-        <CarteDeJoueur pseudo={pseudo} avatar={avatar} steamid={steamid} plusieursComptes={plusieursComptes} jeux={jeux} />
+        <Identite pseudo={pseudo} avatar={avatar} steamid={steamid} plusieursComptes={plusieursComptes} />
       )}
 
       <div className={styles.notes}>

@@ -5,14 +5,13 @@
   gap: var(--e3);
 }
 
-/* Le sigle : le blason violet-rose. `--taille-sigle` le grandit. */
+/* Le sigle : le blason. `--taille-sigle` le grandit. */
 .sigle {
   --t: var(--taille-sigle, 32px);
   flex: none;
   display: block;
   width: var(--t);
   height: var(--t);
-  filter: drop-shadow(0 4px 14px color-mix(in srgb, var(--violet) 45%, transparent));
 }
 
 .ecu {
