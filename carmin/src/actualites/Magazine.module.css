@@ -1,0 +1,1173 @@
+/*
+ * Le magazine des actualités : la une, sa colonne, le ruban Par jeu et les cartes du fil.
+ * Tout ce qui bouge passe par transform et opacity ; ce qui bouge sans qu'on y touche suit `--lecture-ambiance`.
+ */
+
+/* Les boutons de ce fichier n'ont pas l'allure d'un bouton : on retire celle du navigateur. */
+.uneBouton,
+.aussiCarte,
+.tous,
+.jeuDuRuban,
+.carte {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+/* ── Badges et pastilles */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--texte);
+  background: rgb(255 255 255 / 0.1);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.14);
+}
+
+.badge[data-type='mise_a_jour'] {
+  --teinte: var(--cyan);
+  background: color-mix(in srgb, var(--cyan) 16%, color-mix(in srgb, var(--fond) 55%, transparent));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cyan) 45%, transparent);
+}
+
+.badge[data-type='annonce'] {
+  --teinte: var(--accent);
+  background: color-mix(in srgb, var(--accent-2) 18%, color-mix(in srgb, var(--fond) 55%, transparent));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 50%, transparent);
+}
+
+.point {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--teinte, var(--texte));
+  box-shadow: 0 0 8px var(--teinte, transparent);
+}
+
+.pilule {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  color: var(--texte);
+  background: color-mix(in srgb, var(--fond) 50%, transparent);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.16);
+}
+
+/* ── La une */
+.une {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: flex-end;
+  min-height: clamp(400px, 50vh, 480px);
+  overflow: hidden;
+  border-radius: var(--rayon-xl);
+  background: color-mix(in srgb, var(--couleur-une, var(--couleur-jeu)) 40%, var(--fond));
+  box-shadow: var(--ombre-carte), inset 0 0 0 1px rgb(255 255 255 / 0.1);
+  animation: entrerUne var(--duree-longue) var(--courbe) backwards;
+}
+
+@keyframes entrerUne {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+
+.uneFond {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  overflow: hidden;
+}
+
+/*
+ * L'image dérive lentement (zoom et glissement), à la cadence de l'ambiance. Un seul calque composité :
+ * rien n'est repeint. Elle arrive par un dévoilement plus rapide.
+ */
+.uneImage {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  will-change: transform;
+  animation:
+    devoilerImage calc(var(--duree-longue) * 2) var(--courbe) backwards,
+    deriver var(--duree-ambiance) var(--cadence-ambiance) calc(var(--duree-longue) * 2) infinite alternate;
+  animation-play-state: running, var(--lecture-ambiance);
+  transform: scale(1.06);
+}
+
+@keyframes devoilerImage {
+  from {
+    opacity: 0;
+    transform: scale(1.25);
+  }
+}
+
+@keyframes deriver {
+  from {
+    transform: scale(1.06) translate(0, 0);
+  }
+  to {
+    transform: scale(1.18) translate(-3%, -2%);
+  }
+}
+
+/* Voile : l'image reste lisible en haut à droite, le texte se pose sur une ombre en bas à gauche. */
+.uneVoile {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(0deg, color-mix(in srgb, var(--fond) 96%, transparent) 0%, color-mix(in srgb, var(--fond) 70%, transparent) 32%, transparent 68%),
+    linear-gradient(90deg, color-mix(in srgb, var(--fond) 78%, transparent) 0%, transparent 62%),
+    radial-gradient(120% 90% at 0% 100%, color-mix(in srgb, var(--accent-2) 22%, transparent), transparent 60%);
+}
+
+/* Le liseré néon qui fait le tour de la une. */
+.une::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(140deg, rgb(255 255 255 / 0.35), transparent 30%, transparent 70%, color-mix(in srgb, var(--accent-2) 70%, transparent));
+  mask:
+    linear-gradient(black 0 0) content-box,
+    linear-gradient(black 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.uneTexte {
+  position: relative;
+  max-width: min(640px, 68%);
+  padding: var(--e8) var(--e8) var(--e8);
+}
+
+.uneSurTitre {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+  margin-bottom: var(--e3);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: var(--espacement-etiquette);
+  color: var(--texte);
+  animation: monter var(--duree-longue) var(--courbe) backwards;
+  animation-delay: calc(var(--pas-cascade) * 3);
+}
+
+/* Le point « en direct » : il pulse, comme une diffusion. */
+.direct {
+  position: relative;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-2);
+  box-shadow: 0 0 10px var(--accent-2);
+}
+
+.direct::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid var(--accent-2);
+  animation: onde 1.8s var(--courbe) infinite;
+  animation-play-state: var(--lecture-ambiance);
+}
+
+@keyframes onde {
+  from {
+    opacity: 0.9;
+    transform: scale(0.5);
+  }
+  to {
+    opacity: 0;
+    transform: scale(2);
+  }
+}
+
+.uneEtiquettes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e2);
+  margin-bottom: var(--e4);
+  animation: monter var(--duree-longue) var(--courbe) backwards;
+  animation-delay: calc(var(--pas-cascade) * 4);
+}
+
+.uneTitre {
+  font-family: var(--police-titre);
+  font-size: clamp(24px, 2.3vw, 38px);
+  line-height: 1.18;
+  font-weight: 400;
+  text-wrap: balance;
+  text-shadow: var(--ombre-texte);
+}
+
+.uneBouton {
+  display: block;
+  text-align: left;
+  border-radius: var(--rayon-s);
+}
+
+.uneBouton:hover .mot > span {
+  color: var(--gemme);
+}
+
+/* Le titre se dévoile mot à mot : chaque mot monte de derrière sa ligne. */
+.mot {
+  display: inline-block;
+  overflow: hidden;
+  /* Place pour les jambages, qui seraient sinon coupés. */
+  padding-bottom: 0.1em;
+  margin-bottom: -0.1em;
+  vertical-align: top;
+}
+
+.mot > span {
+  display: inline-block;
+  transition: color var(--duree) var(--courbe);
+  animation: devoilerMot var(--duree-longue) var(--courbe) backwards;
+  animation-delay: calc(var(--pas-cascade) * 5 + var(--i) * var(--pas-cascade) * 0.7);
+}
+
+@keyframes devoilerMot {
+  from {
+    opacity: 0;
+    transform: translateY(105%) rotate(4deg);
+  }
+}
+
+.uneResume {
+  margin-top: var(--e3);
+  max-width: 620px;
+  color: var(--texte-2);
+  font-size: 15px;
+  line-height: 23px;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  animation: monter var(--duree-longue) var(--courbe) backwards;
+  animation-delay: calc(var(--pas-cascade) * 9);
+}
+
+.uneActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e3);
+  margin-top: var(--e5);
+  animation: monter var(--duree-longue) var(--courbe) backwards;
+  animation-delay: calc(var(--pas-cascade) * 11);
+}
+
+/* La jaquette du jeu, posée en haut à droite et un peu penchée, comme une carte sortie du paquet. */
+.uneJaquette {
+  position: absolute;
+  top: var(--e8);
+  right: var(--e8);
+  width: clamp(92px, 10vw, 132px);
+  border-radius: var(--rayon-m);
+  box-shadow:
+    0 22px 50px rgb(0 0 0 / 0.6),
+    0 0 0 1px rgb(255 255 255 / 0.2);
+  transform: rotate(4deg);
+  animation: poserJaquette calc(var(--duree-longue) * 1.4) var(--courbe-ressort) backwards;
+  animation-delay: calc(var(--pas-cascade) * 6);
+  transition: transform var(--duree-longue) var(--courbe-ressort);
+}
+
+.une:hover .uneJaquette {
+  transform: rotate(0deg) translateY(-6px) scale(1.04);
+}
+
+@keyframes poserJaquette {
+  from {
+    opacity: 0;
+    transform: translateY(-40px) rotate(18deg) scale(0.8);
+  }
+}
+
+/* ── À côté de la une */
+.cote {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e4);
+  min-width: 0;
+}
+
+@media (max-width: 960px) {
+  .cote {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  }
+}
+
+/* La carte au dégradé : le fil en chiffres. */
+.bilan {
+  position: relative;
+  overflow: hidden;
+  padding: var(--e5) var(--e5) var(--e4);
+  border-radius: var(--rayon-xl);
+  background: var(--degrade-vedette);
+  box-shadow:
+    0 18px 44px color-mix(in srgb, var(--accent-2) 30%, transparent),
+    inset 0 1px 0 rgb(255 255 255 / 0.3);
+  color: var(--sur-accent);
+  animation: monter var(--duree-longue) var(--courbe) backwards;
+  animation-delay: calc(var(--pas-cascade) * 2);
+}
+
+/* Un reflet passe lentement sur la carte, comme sur du verre. */
+.bilan::after {
+  content: '';
+  position: absolute;
+  inset: -40% auto -40% -60%;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.22), transparent);
+  transform: translateX(0) rotate(18deg);
+  animation: balayer var(--duree-balayage) var(--courbe) infinite;
+  animation-play-state: var(--lecture-ambiance);
+  pointer-events: none;
+}
+
+@keyframes balayer {
+  0%,
+  55% {
+    transform: translateX(0) rotate(18deg);
+  }
+  100% {
+    transform: translateX(520%) rotate(18deg);
+  }
+}
+
+.bilanTitre {
+  font-size: 13px;
+  font-weight: 500;
+  opacity: 0.9;
+}
+
+.bilanChiffres {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--e2);
+  margin-top: var(--e3);
+}
+
+.bilanChiffres > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--e3) var(--e2);
+  border-radius: var(--rayon-m);
+  background: var(--verre-sombre);
+  box-shadow: inset 0 0 0 1px var(--verre-trait);
+  text-align: center;
+}
+
+.bilanChiffres dd {
+  font-family: var(--police-titre);
+  font-size: 28px;
+  line-height: 1.1;
+  font-weight: 500;
+}
+
+.bilanChiffres dt {
+  font-size: 12px;
+  line-height: 15px;
+  opacity: 0.9;
+}
+
+.bilanTexte {
+  margin-top: var(--e3);
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+/* Trois autres titres, en petites cartes de verre. */
+.aussi {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: var(--e4);
+  border-radius: var(--rayon-xl);
+  background: var(--panneau);
+  box-shadow: var(--arete), inset 0 0 0 1px var(--trait);
+}
+
+.aussiTitre {
+  margin-bottom: var(--e2);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--texte-2);
+}
+
+.aussi ul {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.aussiCarte {
+  display: flex;
+  align-items: center;
+  gap: var(--e3);
+  width: 100%;
+  padding: var(--e2);
+  border-radius: var(--rayon-m);
+  text-align: left;
+  transition:
+    background-color var(--duree-courte) var(--courbe),
+    transform var(--duree) var(--courbe);
+}
+
+.aussiCarte:hover {
+  background: var(--survol);
+  transform: translateX(4px);
+}
+
+.aussiImage {
+  flex: none;
+  width: 76px;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  border-radius: var(--rayon-s);
+  background: var(--surface-3);
+}
+
+.aussiImage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--duree-longue) var(--courbe);
+}
+
+.aussiCarte:hover .aussiImage img {
+  transform: scale(1.12);
+}
+
+.aussiCorps {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.aussiJeu {
+  font-size: 12px;
+  color: var(--texte-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.aussiTexte {
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 500;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+/* ── Ruban « Par jeu » */
+.ruban {
+  margin-bottom: var(--e10);
+}
+
+.ruban > h2 {
+  margin-bottom: var(--e4);
+}
+
+/* Le ruban défile à l'horizontale ; ses bords s'effacent pour dire qu'il continue. */
+.piste {
+  display: flex;
+  gap: var(--e4);
+  margin: calc(var(--e3) * -1) calc(var(--marge-page) * -1) 0;
+  padding: var(--e3) var(--marge-page) var(--e4);
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scroll-padding-inline: var(--marge-page);
+  scrollbar-width: none;
+  mask-image: linear-gradient(90deg, transparent, black var(--marge-page), black calc(100% - var(--marge-page)), transparent);
+}
+
+.piste::-webkit-scrollbar {
+  display: none;
+}
+
+.piste > li {
+  flex: none;
+  scroll-snap-align: start;
+}
+
+.tous,
+.jeuDuRuban {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+  width: 108px;
+  text-align: left;
+  border-radius: var(--rayon-m);
+}
+
+.tous {
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 2 / 3;
+  height: auto;
+  border-radius: var(--rayon-m);
+  background: var(--panneau);
+  box-shadow: var(--arete), inset 0 0 0 1px var(--trait);
+  color: var(--texte-2);
+  font-size: 13px;
+  font-weight: 500;
+  text-align: center;
+  transition:
+    transform var(--duree) var(--courbe),
+    box-shadow var(--duree) var(--courbe);
+}
+
+.tous:hover {
+  transform: translateY(-4px);
+  color: var(--texte);
+}
+
+.tous[aria-pressed='true'] {
+  color: var(--sur-accent);
+  background: var(--degrade-doux);
+  box-shadow:
+    inset 0 0 0 2px var(--accent),
+    var(--lueur-accent);
+}
+
+.couverture {
+  position: relative;
+  display: block;
+  border-radius: var(--rayon-m);
+  transition:
+    transform var(--duree) var(--courbe-ressort),
+    box-shadow var(--duree) var(--courbe);
+}
+
+/* L'anneau néon du jeu choisi : posé sous la jaquette, il déborde d'un liseré au dégradé. */
+.couverture::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  z-index: -1;
+  border-radius: calc(var(--rayon-m) + 3px);
+  background: var(--degrade);
+  opacity: 0;
+  transform: scale(0.94);
+  transition:
+    opacity var(--duree) var(--courbe),
+    transform var(--duree) var(--courbe-ressort);
+}
+
+.jeuDuRuban {
+  position: relative;
+  isolation: isolate;
+}
+
+.jeuDuRuban:hover .couverture {
+  transform: translateY(-6px) rotate(-1.5deg);
+  box-shadow: 0 16px 30px rgb(0 0 0 / 0.5);
+}
+
+.jeuDuRuban[aria-pressed='true'] .couverture {
+  transform: translateY(-4px);
+  box-shadow: 0 0 30px color-mix(in srgb, var(--accent-2) 55%, transparent);
+}
+
+.jeuDuRuban[aria-pressed='true'] .couverture::before {
+  opacity: 1;
+  transform: none;
+}
+
+/* Le nombre de nouvelles : une pastille au dégradé, à cheval sur le coin. */
+.compte {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: var(--degrade);
+  color: var(--sur-accent);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 26px;
+  text-align: center;
+  box-shadow:
+    0 0 0 3px var(--fond),
+    var(--lueur-accent);
+  transition: transform var(--duree) var(--courbe-ressort);
+}
+
+.jeuDuRuban:hover .compte {
+  transform: scale(1.18);
+}
+
+.nomRuban {
+  font-size: 13px;
+  line-height: 17px;
+  font-weight: 500;
+  color: var(--texte-2);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.jeuDuRuban[aria-pressed='true'] .nomRuban {
+  color: var(--texte);
+}
+
+/* ── Les cartes du fil */
+.case {
+  display: flex;
+  min-width: 0;
+  animation: monter var(--duree-longue) var(--courbe) backwards;
+  animation-delay: calc(var(--rang, 0) * var(--pas-cascade));
+}
+
+/* L'intitulé du jour, en onglet au-dessus de la première carte de la journée. */
+.onglet {
+  position: absolute;
+  z-index: 4;
+  top: -11px;
+  left: var(--e4);
+  height: 22px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: var(--fond);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent), 0 0 18px color-mix(in srgb, var(--accent-2) 30%, transparent);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 22px;
+  color: var(--texte);
+  pointer-events: none;
+}
+
+.case[data-format='grande'] {
+  grid-column: span 2;
+  grid-row: span 2;
+}
+
+@media (max-width: 640px) {
+  /* L'intitulé du jour, en onglet au-dessus de la première carte de la journée. */
+.onglet {
+  position: absolute;
+  z-index: 4;
+  top: -11px;
+  left: var(--e4);
+  height: 22px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: var(--fond);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 55%, transparent), 0 0 18px color-mix(in srgb, var(--accent-2) 30%, transparent);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 22px;
+  color: var(--texte);
+  pointer-events: none;
+}
+
+.case[data-format='grande'] {
+    grid-column: auto;
+  }
+}
+
+.carte {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 100%;
+  overflow: hidden;
+  border-radius: var(--rayon-l);
+  background: var(--panneau);
+  box-shadow: var(--arete), inset 0 0 0 1px var(--trait);
+  text-align: left;
+  transition:
+    transform var(--duree) var(--courbe),
+    box-shadow var(--duree) var(--courbe);
+}
+
+/* Le reflet sous le pointeur, et le liseré au dégradé qui s'allume au survol. */
+.carte::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: inherit;
+  padding: 1px;
+  background: var(--degrade);
+  mask:
+    linear-gradient(black 0 0) content-box,
+    linear-gradient(black 0 0);
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity var(--duree) var(--courbe);
+  pointer-events: none;
+}
+
+.carte::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: radial-gradient(420px circle at var(--gx, 50%) var(--gy, 0%), rgb(255 255 255 / 0.1), transparent 45%);
+  opacity: 0;
+  transition: opacity var(--duree) var(--courbe);
+  pointer-events: none;
+}
+
+.carte:hover {
+  transform: translateY(-5px);
+  box-shadow:
+    0 22px 44px rgb(0 0 0 / 0.5),
+    0 0 36px color-mix(in srgb, var(--couleur-carte, var(--accent)) 35%, transparent);
+}
+
+.carte:hover::after,
+.carte:hover::before {
+  opacity: 1;
+}
+
+.visuel {
+  position: relative;
+  display: block;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--couleur-carte, var(--surface-3)) 45%, var(--surface-2));
+}
+
+.photo,
+.flou {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform calc(var(--duree-longue) * 1.4) var(--courbe);
+}
+
+/* Sans image : la jaquette du jeu, agrandie et voilée de sa couleur, sert de fond. */
+.flou {
+  opacity: 0.9;
+  transform: scale(1.4);
+  filter: blur(16px) saturate(1.6);
+}
+
+.carte:hover .photo {
+  transform: scale(1.08);
+}
+
+.carte:hover .flou {
+  transform: scale(1.55);
+}
+
+.visuel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(0deg, color-mix(in srgb, var(--fond) 85%, transparent), transparent 55%);
+}
+
+/* La jaquette du jeu en vignette, à cheval sur l'image et le texte. */
+.vignette {
+  position: absolute;
+  z-index: 1;
+  left: var(--e4);
+  width: 46px;
+  border-radius: var(--rayon-s);
+  box-shadow:
+    0 8px 18px rgb(0 0 0 / 0.55),
+    0 0 0 2px rgb(255 255 255 / 0.18);
+  transition: transform var(--duree) var(--courbe-ressort);
+}
+
+.vignette > * {
+  border-radius: var(--rayon-s);
+}
+
+.carte:hover .vignette {
+  transform: translateY(-4px) rotate(-4deg);
+}
+
+.corps {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: var(--e4) var(--e4) var(--e5);
+}
+
+.ligne {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e2);
+  font-size: 12px;
+  color: var(--texte-3);
+}
+
+.langue {
+  padding: 0 6px;
+  border: 1px solid var(--trait-fort);
+  border-radius: 6px;
+  line-height: 18px;
+}
+
+.date {
+  margin-left: auto;
+}
+
+.nomDuJeu {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--texte-2);
+}
+
+.titreCarte {
+  font-weight: 500;
+  font-size: 16px;
+  line-height: 22px;
+  text-wrap: pretty;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+}
+
+.resumeCarte {
+  font-size: 13px;
+  line-height: 19px;
+  color: var(--texte-3);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+/* La flèche « lire » glisse en place au survol. */
+.lire {
+  position: absolute;
+  z-index: 2;
+  top: var(--e3);
+  right: var(--e3);
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--degrade);
+  color: var(--sur-accent);
+  box-shadow: var(--lueur-accent);
+  opacity: 0;
+  transform: translateX(-8px) scale(0.7);
+  transition:
+    opacity var(--duree) var(--courbe),
+    transform var(--duree) var(--courbe-ressort);
+}
+
+.carte:hover .lire,
+.carte:focus-visible .lire {
+  opacity: 1;
+  transform: none;
+}
+
+/*
+ * La vignette du jeu se place au bas de l'image : on la décale d'une hauteur d'image moins la moitié
+ * de la sienne. L'image fait 16/9 de la largeur de la carte, donc on passe par un conteneur de requêtes.
+ */
+.case {
+  position: relative;
+  container-type: inline-size;
+}
+
+.vignette {
+  top: calc(100cqi * 9 / 16 - 52px);
+}
+
+.case:has(.vignette) .corps {
+  padding-left: calc(var(--e4) + 46px + var(--e3));
+}
+
+/* Format « texte » : pas d'image d'annonce. Le fond flouté est plus bas, la vignette prend sa place à gauche. */
+.case[data-format='texte'] .visuel {
+  position: absolute;
+  inset: 0;
+  aspect-ratio: auto;
+  z-index: 0;
+}
+
+.case[data-format='texte'] .visuel::after {
+  background:
+    linear-gradient(0deg, color-mix(in srgb, var(--fond) 92%, transparent), color-mix(in srgb, var(--fond) 35%, transparent)),
+    radial-gradient(80% 60% at 100% 0%, color-mix(in srgb, var(--accent-2) 22%, transparent), transparent);
+}
+
+.case[data-format='texte'] .vignette {
+  top: var(--e4);
+  width: 64px;
+}
+
+.case[data-format='texte'] .corps {
+  min-height: 100%;
+  padding-left: calc(var(--e4) + 64px + var(--e4));
+  padding-top: var(--e4);
+}
+
+.case[data-format='texte'] .resumeCarte {
+  -webkit-line-clamp: 4;
+}
+
+/* Format « grande » : l'image remplit la carte, le texte se pose dessus, en plus grand. */
+.case[data-format='grande'] .visuel {
+  position: absolute;
+  inset: 0;
+  aspect-ratio: auto;
+  z-index: 0;
+}
+
+.case[data-format='grande'] .visuel::after {
+  background:
+    linear-gradient(0deg, color-mix(in srgb, var(--fond) 95%, transparent) 0%, color-mix(in srgb, var(--fond) 60%, transparent) 38%, transparent 70%),
+    radial-gradient(90% 70% at 0% 100%, color-mix(in srgb, var(--couleur-carte, var(--accent-2)) 30%, transparent), transparent);
+}
+
+.case[data-format='grande'] .carte {
+  justify-content: flex-end;
+  min-height: 420px;
+}
+
+.case[data-format='grande'] .vignette {
+  top: auto;
+  bottom: var(--e6);
+  left: var(--e6);
+  width: 72px;
+}
+
+.case[data-format='grande'] .corps {
+  padding: var(--e6) var(--e6) var(--e6) calc(var(--e6) + 72px + var(--e5));
+}
+
+.case[data-format='grande'] .titreCarte {
+  font-family: var(--police-titre);
+  font-size: clamp(20px, 1.9vw, 26px);
+  line-height: 1.2;
+  text-shadow: var(--ombre-texte);
+}
+
+.case[data-format='grande'] .resumeCarte {
+  color: var(--texte-2);
+  font-size: 14px;
+  line-height: 21px;
+}
+
+.case[data-format='grande'] .date,
+.case[data-format='grande'] .ligne {
+  color: var(--texte-2);
+}
+
+/* Copies locales : les modules CSS renomment les animations, celles de base.css n'y sont pas visibles. */
+@keyframes monter {
+  from {
+    opacity: 0;
+    transform: translateY(22px) scale(0.985);
+  }
+}
+
+/* ══════════ Carmin : Actualités retravaillée (le rouge en touche, des cartes nettes, sans aplat) ══════════ */
+
+/* Le bilan : une vitre sombre comme les autres panneaux, un trait rouge qui luit, les chiffres en blanc. */
+.bilan {
+  background: linear-gradient(150deg, color-mix(in srgb, var(--ecarlate) 14%, transparent), rgb(255 255 255 / 0.03) 65%), var(--panneau);
+  box-shadow: var(--arete), inset 0 0 0 1px rgb(255 255 255 / 0.07);
+  color: var(--texte);
+}
+
+.bilan::after {
+  content: '';
+  inset: var(--e5) auto auto 0;
+  width: 3px;
+  height: 22px;
+  border-radius: 3px;
+  background: var(--degrade);
+  box-shadow: 0 0 14px 2px color-mix(in srgb, var(--ecarlate) 70%, transparent);
+  transform: none;
+  animation: none;
+}
+
+.bilanTitre {
+  color: var(--texte-2);
+  opacity: 1;
+}
+
+.bilanChiffres > div {
+  padding: var(--e4) var(--e2) var(--e3);
+  background: rgb(255 255 255 / 0.035);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.06);
+  transition: background var(--duree) var(--courbe), transform var(--duree) var(--courbe-ressort);
+}
+
+.bilanChiffres > div:hover {
+  background: rgb(255 255 255 / 0.06);
+  transform: translateY(-2px);
+}
+
+.bilanChiffres > div:first-child dd {
+  color: var(--accent);
+  text-shadow: 0 0 18px color-mix(in srgb, var(--ecarlate) 60%, transparent);
+}
+
+.bilanChiffres dd {
+  font-weight: 400;
+}
+
+.bilanChiffres dt {
+  color: var(--texte-3);
+  letter-spacing: 0.02em;
+  opacity: 1;
+}
+
+.bilanTexte {
+  color: var(--texte-3);
+  opacity: 1;
+}
+
+/* Le fil : plus d'air entre les cartes. */
+.carte {
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.035), rgb(255 255 255 / 0.015)), var(--panneau);
+  box-shadow: var(--arete), inset 0 0 0 1px rgb(255 255 255 / 0.06);
+}
+
+.carte:hover {
+  box-shadow:
+    0 22px 44px rgb(0 0 0 / 0.55),
+    0 0 30px -6px color-mix(in srgb, var(--ecarlate) 35%, transparent);
+}
+
+/* Le liseré du survol : un seul trait rouge, pas tout le tour. */
+.carte::after {
+  inset: auto var(--e4) 0;
+  height: 2px;
+  padding: 0;
+  border-radius: 2px;
+  mask: none;
+  box-shadow: 0 0 14px 1px color-mix(in srgb, var(--ecarlate) 70%, transparent);
+  transform: scaleX(0.3);
+  transition:
+    opacity var(--duree) var(--courbe),
+    transform var(--duree-longue) var(--courbe);
+}
+
+.carte:hover::after {
+  transform: none;
+}
+
+/* Sans image d'annonce : plus de fond flouté boueux. Une surface sombre, la jaquette nette à gauche. */
+.case[data-format='texte'] .flou {
+  display: none;
+}
+
+.case[data-format='texte'] .visuel {
+  background: none;
+}
+
+.case[data-format='texte'] .visuel::after {
+  background: radial-gradient(90% 55% at 0% 0%, color-mix(in srgb, var(--couleur-carte, var(--ecarlate)) 16%, transparent), transparent 70%);
+  transition: opacity var(--duree-longue) var(--courbe);
+  opacity: 0.8;
+}
+
+.case[data-format='texte'] .carte:hover .visuel::after {
+  opacity: 1;
+}
+
+.case[data-format='texte'] .vignette {
+  width: 56px;
+  box-shadow:
+    0 12px 26px -8px rgb(0 0 0 / 0.8),
+    0 0 0 1px rgb(255 255 255 / 0.12);
+}
+
+.case[data-format='texte'] .corps {
+  padding: var(--e5) var(--e5) var(--e6) calc(var(--e5) + 56px + var(--e4));
+  gap: 8px;
+}
+
+/* L'onglet du jour : une pastille sombre, un point rouge, posée sur le bord de la carte. */
+.onglet {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  top: -12px;
+  padding: 0 12px 0 10px;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.12), 0 6px 16px rgb(0 0 0 / 0.5);
+  letter-spacing: 0.02em;
+}
+
+.onglet::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ecarlate);
+  box-shadow: 0 0 8px var(--ecarlate);
+}
+
+/* « Tous les jeux » : sombre avec un léger dégradé quand il est choisi, comme l'entrée allumée du menu. */
+.tous[aria-pressed='true'] {
+  color: var(--texte);
+  background: linear-gradient(160deg, color-mix(in srgb, var(--ecarlate) 18%, transparent), rgb(255 255 255 / 0.03) 70%), var(--panneau);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--ecarlate) 55%, transparent),
+    0 0 22px -6px color-mix(in srgb, var(--ecarlate) 60%, transparent);
+}
+
+.tous[aria-pressed='true'] svg {
+  color: var(--accent);
+}
+
+/* Les jaquettes du ruban se mirent au sol, comme sur l'accueil. */
+.couverture {
+  -webkit-box-reflect: below 6px linear-gradient(transparent 72%, rgb(255 255 255 / 0.2));
+}
+
+.nomRuban {
+  position: relative;
+  z-index: 1;
+  text-shadow: 0 1px 8px rgb(0 0 0 / 0.8);
+}
+
+.piste {
+  padding-bottom: calc(var(--e4) + 36px);
+  margin-bottom: -36px;
+}
