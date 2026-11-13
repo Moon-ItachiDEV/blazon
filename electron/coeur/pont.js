@@ -28,8 +28,8 @@ function creerLeCoeur() {
     dechiffrer: (b) => (b.startsWith('clair:') ? Buffer.from(b.slice(6), 'base64').toString() : safeStorage.decryptString(Buffer.from(b, 'base64'))),
     ouvrirExterne: (url) => shell.openExternal(url),
     ouvrirDossier: async (p) => { const e = await shell.openPath(p); if (e) throw new Error(e); },
-    lancerExe: async (exe) => {
-      const enfant = spawn(exe, [], { cwd: path.dirname(exe), detached: true, stdio: 'ignore', windowsHide: false });
+    lancerExe: async (exe, args = [], cwd = null) => {
+      const enfant = spawn(exe, args, { cwd: cwd || path.dirname(exe), detached: true, stdio: 'ignore', windowsHide: false });
       await new Promise((ok, ko) => { enfant.once('spawn', ok); enfant.once('error', ko); });
       return { fin: new Promise((ok) => enfant.once('exit', () => ok())) };
     },

@@ -29,7 +29,7 @@ export type DateUtc = string;
 
 export type Langue = 'fr' | 'en';
 
-export type Source = 'steam' | 'epic' | 'gog' | 'manuel';
+export type Source = 'steam' | 'epic' | 'gog' | 'ea' | 'manuel';
 
 /**
  * Niveau de données disponible (§7).

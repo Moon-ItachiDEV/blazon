@@ -49,7 +49,7 @@ export function pluriel(langue: Langue, base: BasePluriel, nombre: number, valeu
   return traduire(langue, `${base}.${forme}`, { n: NOMBRES[langue].format(nombre), ...valeurs });
 }
 
-const SOURCES: ReadonlySet<string> = new Set<Source>(['steam', 'epic', 'gog', 'manuel']);
+const SOURCES: ReadonlySet<string> = new Set<Source>(['steam', 'epic', 'gog', 'ea', 'manuel']);
 
 /**
  * Phrase d'une erreur du cœur. Une clé inconnue retombe sur l'erreur générique :

@@ -35,6 +35,7 @@ const COULEUR_DE_SOURCE: Record<Source, string> = {
   steam: 'var(--accent-3)',
   epic: 'var(--accent-2)',
   gog: 'var(--cyan)',
+  ea: 'var(--accent)',
   manuel: 'var(--succes)',
 };
 

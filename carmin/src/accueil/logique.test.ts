@@ -55,18 +55,18 @@ describe('statut des magasins', () => {
   const statuts = (l: LectureDuScan, steam = true) => statutsDesSources(l, steam).map((s) => s.statut);
 
   it('marque les magasins déjà vus, celui en cours et ceux à venir', () => {
-    expect(statuts(lecture('en_cours', 'epic'))).toEqual(['fini', 'en_cours', 'a_venir']);
-    expect(statuts(lecture('termine'))).toEqual(['fini', 'fini', 'fini']);
-    expect(statuts(lecture('attente'))).toEqual(['a_venir', 'a_venir', 'a_venir']);
+    expect(statuts(lecture('en_cours', 'epic'))).toEqual(['fini', 'en_cours', 'a_venir', 'a_venir']);
+    expect(statuts(lecture('termine'))).toEqual(['fini', 'fini', 'fini', 'fini']);
+    expect(statuts(lecture('attente'))).toEqual(['a_venir', 'a_venir', 'a_venir', 'a_venir']);
   });
 
   it('commence par le premier magasin présent quand la source n’est pas encore connue', () => {
-    expect(statuts(lecture('en_cours'))).toEqual(['en_cours', 'a_venir', 'a_venir']);
-    expect(statuts(lecture('en_cours'), false)).toEqual(['absent', 'en_cours', 'a_venir']);
+    expect(statuts(lecture('en_cours'))).toEqual(['en_cours', 'a_venir', 'a_venir', 'a_venir']);
+    expect(statuts(lecture('en_cours'), false)).toEqual(['absent', 'en_cours', 'a_venir', 'a_venir']);
   });
 
   it('dit que Steam est absent plutôt que fini ou en cours', () => {
-    expect(statuts(lecture('termine'), false)).toEqual(['absent', 'fini', 'fini']);
+    expect(statuts(lecture('termine'), false)).toEqual(['absent', 'fini', 'fini', 'fini']);
     expect(statuts(lecture('en_cours', 'steam'), false)[0]).toBe('absent');
   });
 });
