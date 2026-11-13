@@ -65,7 +65,6 @@ function TitreDeFiche({ titre, logo }: { titre: string; logo: string | null }) {
   return (
     <h1 id="fiche-titre" className={styles.titre} data-logo={enImage ? '' : undefined} data-gabarit={enImage ? undefined : gabaritDeTitre(titre)}>
       {enImage ? <img className={styles.logo} src={logo} alt={titre} onError={() => setLogoCasse(true)} /> : <span className={styles.titreTexte}>{titre}</span>}
-      <span className={styles.reflet} aria-hidden="true" />
     </h1>
   );
 }

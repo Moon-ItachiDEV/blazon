@@ -60,7 +60,7 @@ export function lireLeScan(scan: EtatScan | null, direct: Progression | null, de
 }
 
 /** Les magasins parcourus par le scan, dans l'ordre où le cœur les visite. */
-export const SOURCES_DU_SCAN = ['steam', 'epic', 'gog'] as const satisfies readonly Source[];
+export const SOURCES_DU_SCAN = ['steam', 'epic', 'gog', 'ea'] as const satisfies readonly Source[];
 export type SourceDuScan = (typeof SOURCES_DU_SCAN)[number];
 
 export type StatutDeSource = 'a_venir' | 'en_cours' | 'fini' | 'absent';

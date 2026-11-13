@@ -127,4 +127,35 @@ async function succesDuJoueur(cle, steamid, appid) {
   }
 }
 
-module.exports = { utiliserFetch, EchecReseau, articles, DONNEES_GRILLE, DONNEES_FICHE, succesPublics, joueursEnLigne, annonces, resumesJoueurs, jeuxPossedes, listeDAmis, succesDuJoueur };
+// ───────────── Jeux des autres lanceurs ─────────────
+
+/** JSON public d'un autre service (API de GOG). */
+function obtenirJson(url) {
+  return obtenir(url);
+}
+
+/**
+ * Le même jeu sur le magasin Steam, retrouvé par son titre (pour la jaquette, les tags et la fiche
+ * d'un jeu GOG, Epic ou EA). Seul un titre identique, une fois nettoyé, est retenu.
+ */
+async function chercherSurLeMagasin(titre, cleDeTitre) {
+  const voulu = cleDeTitre(titre);
+  if (!voulu) return null;
+  // Le titre exact d'abord, puis le titre nettoyé (« … - Game of the Year Edition » -> « … »).
+  const termes = [...new Set([String(titre).replace(/[™®©]/g, ''), voulu])];
+  for (const terme of termes) {
+    let r;
+    try {
+      r = await obtenir(`${MAGASIN}api/storesearch/?term=${encodeURIComponent(terme)}&l=english&cc=FR`);
+    } catch (e) {
+      if (e.code === 'absent') continue;
+      throw e;
+    }
+    const items = (r?.items || []).filter((it) => it.type === 'app' || it.type === undefined);
+    const exact = items.find((it) => cleDeTitre(it.name) === voulu);
+    if (exact) return Number(exact.id);
+  }
+  return null;
+}
+
+module.exports = { utiliserFetch, obtenirJson, chercherSurLeMagasin, EchecReseau, articles, DONNEES_GRILLE, DONNEES_FICHE, succesPublics, joueursEnLigne, annonces, resumesJoueurs, jeuxPossedes, listeDAmis, succesDuJoueur };

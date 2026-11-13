@@ -1,5 +1,5 @@
 // Branche le vrai cœur sur la fenêtre : commandes par ipcMain.handle, événements par webContents.send.
-// Partagé par Carmin et V2. `--demo` au lancement garde la maquette sur fausses données.
+// L'exécutable n'embarque plus la maquette ni ses données factices : il parle toujours au vrai cœur.
 'use strict';
 const path = require('node:path');
 const fs = require('node:fs');
@@ -15,7 +15,7 @@ const COMMANDES = new Set([
   'ouvrir_un_lien', 'fiche_du_jeu', 'succes_du_jeu', 'amis', 'actualites_du_jeu', 'fil_d_actualites', 'profil', 'enregistrer_la_cle', 'supprimer_la_cle',
 ]);
 
-const modeDemo = () => process.argv.includes('--demo');
+const modeDemo = () => false;
 
 function creerLeCoeur() {
   api.utiliserFetch((url, o) => net.fetch(url, o));
@@ -28,8 +28,8 @@ function creerLeCoeur() {
     dechiffrer: (b) => (b.startsWith('clair:') ? Buffer.from(b.slice(6), 'base64').toString() : safeStorage.decryptString(Buffer.from(b, 'base64'))),
     ouvrirExterne: (url) => shell.openExternal(url),
     ouvrirDossier: async (p) => { const e = await shell.openPath(p); if (e) throw new Error(e); },
-    lancerExe: async (exe) => {
-      const enfant = spawn(exe, [], { cwd: path.dirname(exe), detached: true, stdio: 'ignore', windowsHide: false });
+    lancerExe: async (exe, args = [], cwd = null) => {
+      const enfant = spawn(exe, args, { cwd: cwd || path.dirname(exe), detached: true, stdio: 'ignore', windowsHide: false });
       await new Promise((ok, ko) => { enfant.once('spawn', ok); enfant.once('error', ko); });
       return { fin: new Promise((ok) => enfant.once('exit', () => ok())) };
     },
@@ -53,9 +53,9 @@ function creerLeCoeur() {
 }
 
 /** Fenêtre : options à ajouter à webPreferences, et branchement des événements. */
-function brancher(coeur, fenetre) {
+function brancher(coeur, fenetre, page) {
   if (!coeur) return;
-  const arreter = coeur.ecouter((ev) => { if (!fenetre.isDestroyed()) fenetre.webContents.send('coeur:evenement', ev); });
+  const arreter = coeur.ecouter((ev) => { if (!page.isDestroyed()) page.send('coeur:evenement', ev); });
   fenetre.on('closed', arreter);
 }
 

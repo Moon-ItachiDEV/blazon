@@ -12,7 +12,6 @@ import { PileDAvis } from "../composants/Avis";
 import { coeur } from "../coeur";
 import { useReponse } from "../etat/ressource";
 import { useTexte } from "../i18n/react";
-import { useMaintenant } from "../etat/maintenant";
 import { useApplication } from "../etat/application";
 import { NombreAnime } from "../composants/NombreAnime";
 import { formaterNombre } from "../formats";
@@ -155,23 +154,6 @@ function Medailles({ enJeu }: { enJeu: number | null }) {
   );
 }
 
-/** L'heure, comme sur une console : discrète, à côté du profil. */
-function Horloge() {
-  const { langue } = useTexte();
-  const maintenant = useMaintenant();
-  return (
-    <time
-      className={`${styles.horloge} chiffres`}
-      dateTime={maintenant.toISOString()}
-    >
-      {maintenant.toLocaleTimeString(langue, {
-        hour: "2-digit",
-        minute: "2-digit",
-      })}
-    </time>
-  );
-}
-
 /**
  * Orientation « Carmin » : noir profond et rouge, épurée. À gauche, une barre latérale à libellés
  * (la marque, les écrans, Paramètres et la carte de la collection, sur un voile rouge-rose qui monte du
@@ -219,9 +201,10 @@ export function Coque({ children }: { children: ReactNode }) {
   // La colonne des amis se replie en un rail de portraits ; le choix est gardé d'une visite à l'autre.
   const [replie, setReplie] = useState(() => {
     try {
-      return localStorage.getItem("blazon-carmin-colonne") === "repliee";
+      // Épuré : repliée tant que le joueur ne l'a pas ouverte lui-même.
+      return localStorage.getItem("blazon-carmin-colonne") !== "ouverte";
     } catch {
-      return false;
+      return true;
     }
   });
   const basculerColonne = () =>
@@ -348,7 +331,6 @@ export function Coque({ children }: { children: ReactNode }) {
           </button>
           <div className={styles.outils}>
             <Medailles enJeu={null} />
-            <Horloge />
           </div>
         </header>
 

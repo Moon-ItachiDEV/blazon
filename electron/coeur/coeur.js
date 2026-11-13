@@ -3,6 +3,7 @@
 //
 // Ce qu'il lit :
 //  - le PC : dossier de Steam, bibliothèques, jeux installés, comptes, temps de jeu local, jeu en cours ;
+//  - les autres lanceurs du PC : jeux installés par GOG, Epic Games et l'EA app (autres_lanceurs.js) ;
 //  - Steam sans clé : fiches et visuels du magasin, succès publics, annonces, joueurs en ligne ;
 //  - Steam avec la clé du joueur : jeux possédés, temps de jeu, succès débloqués, profil, amis.
 // La clé est chiffrée par Windows (safeStorage) et ne quitte jamais ce processus.
@@ -11,6 +12,7 @@ const fs = require('node:fs');
 const fsp = require('node:fs/promises');
 const path = require('node:path');
 const local = require('./steam_local');
+const autres = require('./autres_lanceurs');
 const api = require('./api');
 const { bbcodeVersHtml, texteBrut, titreTri, urlAsset, BASE_ASSETS, BASE_COMMUNAUTE, BASE_CLAN } = require('./texte');
 
@@ -18,6 +20,10 @@ const MINUTE = 60_000;
 const HEURE = 60 * MINUTE;
 const JOUR = 24 * HEURE;
 const ID_MANUEL = 1_000_000_000;
+// Jeux des autres lanceurs (GOG, Epic, EA) : identifiants stables, gardés dans donnees.json.
+const ID_EXTERNE = 1_500_000_000;
+const SOURCES_EXTERNES = ['epic', 'gog', 'ea'];
+const estExterne = (id) => id >= ID_EXTERNE;
 
 const LANGUES = { 0: 'en', 1: 'de', 2: 'fr', 3: 'it', 4: 'ko', 5: 'es', 6: 'zh-CN', 7: 'zh-TW', 8: 'ru', 9: 'th', 10: 'ja', 11: 'pt', 12: 'pl', 13: 'da', 14: 'nl', 15: 'fi', 16: 'no', 17: 'sv', 18: 'hu', 19: 'cs', 20: 'ro', 21: 'tr', 22: 'pt-BR', 23: 'bg', 24: 'el', 25: 'ar', 26: 'uk', 27: 'es-419', 28: 'vi', 30: 'id' };
 
@@ -47,13 +53,14 @@ function donneesNeuves() {
     compte: null,
     perso: {},
     manuels: [],
+    externes_ids: {},
     exes: {},
     sessions: [],
     vus: {},
   };
 }
 function cacheNeuf() {
-  return { possedes: null, articles: {}, fiches: {}, succes: {}, amis: null, profil: null, actus: {}, fil: null };
+  return { possedes: null, articles: {}, fiches: {}, succes: {}, amis: null, profil: null, actus: {}, fil: null, visuels_ext: {} };
 }
 
 class CoeurReel {
@@ -82,6 +89,8 @@ class CoeurReel {
     this.steam = null;
     this.comptesLocaux = [];
     this.installes = new Map(); // appid -> jeu installé
+    this.externes = new Map(); // id_jeu -> jeu installé par GOG, Epic ou l'EA app
+    this.icones = new Map(); // exe -> icône (data: URL)
     this.tempsLocaux = new Map();
     this.scan = { en_cours: false, dernier: null, jeux_trouves: 0 };
     this.session = null; // { id_jeu, appid, debut, origine }
@@ -117,7 +126,8 @@ class CoeurReel {
 
   ecrireBientot() {
     clearTimeout(this.minuterieEcriture);
-    this.minuterieEcriture = setTimeout(() => void this.ecrire(), 800);
+    // Le cache peut peser quelques Mo : on l'écrit au plus toutes les 3 s, pas à chaque jeu reçu.
+    this.minuterieEcriture = setTimeout(() => void this.ecrire(), 3000);
   }
 
   async ecrire() {
@@ -212,14 +222,87 @@ class CoeurReel {
       this.tempsLocaux = await local.tempsLocaux(this.steam, this.steamidActif());
     }
     this.installes = installes;
+    await this.scannerLesAutresLanceurs(lent);
     // Jeux ajoutés à la main : ils sont « installés » tant que leur exécutable existe.
     const manuels = this.d.manuels.filter((m) => fs.existsSync(m.chemin)).length;
-    const total = installes.size + manuels;
+    const total = installes.size + this.externes.size + manuels;
     this.scan = { en_cours: false, dernier: iso(maintenant()), jeux_trouves: total };
     const apres = new Set(this.visibles().map((j) => j.id));
     this.signaler([...apres], [...avant].filter((id) => !apres.has(id)));
     this.emettre({ type: 'scan_termine', jeux_trouves: total, duree_ms: maintenant() - debut });
     this.emettre({ type: 'etat_modifie' });
+    this.ecrireBientot();
+  }
+
+  /** Jeux installés par Epic, GOG et l'EA app. Un même dossier n'est compté qu'une fois. */
+  async scannerLesAutresLanceurs(lent) {
+    const externes = new Map();
+    const dossiers = new Set([...this.installes.values()].map((j) => j.dossier).filter(Boolean).map((d) => path.normalize(d).toLowerCase()));
+    for (const source of SOURCES_EXTERNES) {
+      let trouves = 0;
+      for (const e of await autres.jeuxDe(source)) {
+        const k = path.normalize(e.dossier).toLowerCase();
+        // Un jeu EA acheté sur Steam ou Epic a aussi un __Installer : il reste rangé chez Steam ou Epic.
+        if (dossiers.has(k) || /[\\/]steamapps[\\/]/i.test(e.dossier)) continue;
+        dossiers.add(k);
+        const id = this.idExterne(e.source, e.id_source);
+        externes.set(id, { ...e, id });
+        trouves++;
+      }
+      this.externes = new Map([...this.externes, ...externes]);
+      this.emettre({ type: 'scan_progression', source, jeux_trouves: trouves });
+      if (lent && trouves) await new Promise((r) => setTimeout(r, 400));
+    }
+    this.externes = externes;
+    for (const e of externes.values()) {
+      if (!this.d.vus[`${e.source}:${e.id_source}`]) this.d.vus[`${e.source}:${e.id_source}`] = iso(maintenant());
+      if (e.exe && !this.icones.has(e.exe)) {
+        this.icones.set(e.exe, null);
+        void this.o.icone(e.exe).then((u) => { this.icones.set(e.exe, u); this.signaler([e.id]); }).catch(() => {});
+      }
+    }
+  }
+
+  /** Identifiant stable d'un jeu d'un autre launcher (le même d'un lancement à l'autre). */
+  idExterne(source, id_source) {
+    const k = `${source}:${id_source}`;
+    if (this.d.externes_ids[k]) return this.d.externes_ids[k];
+    const pris = new Set(Object.values(this.d.externes_ids));
+    let id = ID_EXTERNE + 1;
+    while (pris.has(id)) id++;
+    this.d.externes_ids[k] = id;
+    this.ecrireBientot();
+    return id;
+  }
+
+  /** Jaquettes et fiches des jeux GOG, Epic et EA : leur launcher d'abord, sinon le même jeu sur le magasin Steam. */
+  async completerLesVisuelsExternes() {
+    if (this.session || !this.d.parametres.sources_en_ligne.visuels_magasin) return;
+    const limite = maintenant() - 7 * JOUR;
+    const nouveaux = [];
+    for (const e of this.externes.values()) {
+      const k = `${e.source}:${e.id_source}`;
+      const v = this.c.visuels_ext[k];
+      if (v && Date.parse(v.maj_le) > limite) continue;
+      const res = { maj_le: iso(maintenant()), jaquette: null, hero: null, appid: null };
+      try {
+        if (e.source === 'gog') {
+          const g = await autres.visuelsGog(e.id_source, (u) => api.obtenirJson(u)).catch(() => null);
+          if (g) { res.jaquette = g.jaquette; res.hero = g.hero; }
+        }
+        for (const t of [...new Set([e.titre_en, e.titre].filter(Boolean))]) {
+          res.appid = await api.chercherSurLeMagasin(t, autres.cleDeTitre);
+          if (res.appid) break;
+        }
+        this.noterReseau(true);
+      } catch (err) {
+        if (err?.code === 'hors_ligne') { this.noterReseau(false); return; }
+      }
+      this.c.visuels_ext[k] = res;
+      if (res.appid) nouveaux.push(res.appid);
+      this.signaler([e.id]);
+    }
+    if (nouveaux.length) await this.completerLesArticles();
     this.ecrireBientot();
   }
 
@@ -230,6 +313,7 @@ class CoeurReel {
       try {
         await this.rafraichirLesPossedes();
         await this.completerLesArticles();
+        await this.completerLesVisuelsExternes();
         void this.completerLesSucces();
       } catch { /* chaque étape range déjà ses erreurs */ }
     })().finally(() => { this.synchro = null; });
@@ -282,7 +366,7 @@ class CoeurReel {
   async completerLesArticles() {
     if (this.session) return;
     const limite = maintenant() - 7 * JOUR;
-    const manquants = this.appidsVisibles().filter((a) => {
+    const manquants = [...new Set([...this.appidsVisibles(), ...this.appidsDesExternes()])].filter((a) => {
       const art = this.c.articles[a];
       return !art || Date.parse(art.maj_le) < limite;
     });
@@ -368,10 +452,19 @@ class CoeurReel {
     }
   }
 
+  /**
+   * Jeux possédés, par appid. Gardé en mémoire tant que la liste, le compte et le niveau ne changent pas :
+   * la bibliothèque le consulte deux fois par jeu, il était reconstruit 4 000 fois pour 2 000 jeux.
+   */
   possedes() {
     const p = this.c.possedes;
-    if (!p || p.steamid !== this.steamidActif() || !this.personnelOk()) return new Map();
-    return new Map(p.jeux.map((g) => [g.appid, g]));
+    const steamid = this.steamidActif();
+    const ok = Boolean(p) && p.steamid === steamid && this.personnelOk();
+    const m = this.memoPossedes;
+    if (m && m.p === p && m.steamid === steamid && m.ok === ok) return m.carte;
+    const carte = ok ? new Map(p.jeux.map((g) => [g.appid, g])) : new Map();
+    this.memoPossedes = { p, steamid, ok, carte };
+    return carte;
   }
 
   appidsVisibles() {
@@ -429,27 +522,81 @@ class CoeurReel {
     return t;
   }
 
-  jeuManuel(m) {
-    const p = this.d.perso[m.id] || {};
-    const sessions = this.d.sessions.filter((s) => s.id_jeu === m.id);
+  /** Temps de jeu compté par Blazon lui-même (jeux hors Steam). */
+  tempsDesSessions(id_jeu) {
+    const sessions = this.d.sessions.filter((s) => s.id_jeu === id_jeu);
     const total = Math.round(sessions.reduce((n, s) => n + s.duree_s, 0) / 60);
     const deuxSem = Math.round(sessions.filter((s) => Date.parse(s.debut) > maintenant() - 14 * JOUR).reduce((n, s) => n + s.duree_s, 0) / 60);
     const dernier = sessions.map((s) => s.debut).sort().pop() ?? null;
+    return { minutes_total: total, minutes_2sem: deuxSem, dernier_lancement: dernier, origine: 'local' };
+  }
+
+  jeuManuel(m) {
+    const p = this.d.perso[m.id] || {};
     const titre = p.titre || m.titre;
     return {
       id: m.id, titre, titre_tri: titreTri(titre), sources: ['manuel'], steam_appid: null,
       installe: fs.existsSync(m.chemin), taille_octets: null, ajoute_le: m.ajoute_le,
       favori: Boolean(p.favori), masque: Boolean(p.masque),
-      temps: { minutes_total: total, minutes_2sem: deuxSem, dernier_lancement: dernier, origine: 'local' },
+      temps: this.tempsDesSessions(m.id),
       jaquette: null, icone: m.icone ?? null, couleur_dominante: null, tags: [], modes: [], manette: null, avis: null, date_sortie: null, succes: null,
     };
   }
 
+  /** Le même jeu sur le magasin Steam, s'il y est (pour la jaquette, les tags et la fiche). */
+  appidDuMagasin(e) {
+    return this.c.visuels_ext[`${e.source}:${e.id_source}`]?.appid ?? null;
+  }
+
+  appidsDesExternes() {
+    return [...this.externes.values()].map((e) => this.appidDuMagasin(e)).filter(Boolean);
+  }
+
+  visuelsExternes(e) {
+    const appid = this.appidDuMagasin(e);
+    const art = appid ? this.c.articles[appid]?.a ?? null : null;
+    const v = this.c.visuels_ext[`${e.source}:${e.id_source}`] || {};
+    const ok = this.d.parametres.sources_en_ligne.visuels_magasin;
+    return {
+      art,
+      appid,
+      jaquette: ok ? urlAsset(art?.assets, 'library_capsule') || e.jaquette || v.jaquette || null : null,
+      hero: ok ? urlAsset(art?.assets, 'library_hero') || e.hero || v.hero || null : null,
+      en_tete: ok ? urlAsset(art?.assets, 'header') || null : null,
+    };
+  }
+
+  jeuExterne(e) {
+    const p = this.d.perso[e.id] || {};
+    const titre = p.titre || e.titre;
+    const { art, jaquette } = this.visuelsExternes(e);
+    return {
+      id: e.id, titre, titre_tri: titreTri(titre), sources: [e.source], steam_appid: null,
+      installe: true, taille_octets: e.taille_octets ?? null, ajoute_le: this.d.vus[`${e.source}:${e.id_source}`] || iso(maintenant()),
+      favori: Boolean(p.favori), masque: Boolean(p.masque),
+      temps: this.tempsDesSessions(e.id),
+      jaquette,
+      icone: (e.exe && this.icones.get(e.exe)) || null,
+      couleur_dominante: null,
+      tags: art?.tags ?? [], modes: art?.modes ?? [], manette: art?.manette ?? null, avis: art?.avis ?? null, date_sortie: art?.sortie ?? null,
+      succes: null,
+    };
+  }
+
   visibles() {
-    return [...this.appidsVisibles().map((a) => this.jeuSteam(a)), ...this.d.manuels.map((m) => this.jeuManuel(m))];
+    return [
+      ...this.appidsVisibles().map((a) => this.jeuSteam(a)),
+      ...[...this.externes.values()].map((e) => this.jeuExterne(e)),
+      ...this.d.manuels.map((m) => this.jeuManuel(m)),
+    ];
   }
 
   jeuParId(id_jeu) {
+    if (estExterne(id_jeu)) {
+      const e = this.externes.get(id_jeu);
+      if (!e) throw erreur('introuvable', { id_jeu });
+      return this.jeuExterne(e);
+    }
     if (id_jeu >= ID_MANUEL) {
       const m = this.d.manuels.find((x) => x.id === id_jeu);
       if (!m) throw erreur('introuvable', { id_jeu });
@@ -647,6 +794,15 @@ class CoeurReel {
   async detail_jeu(id_jeu) {
     const resume = this.jeuParId(id_jeu);
     const sessions_recentes = this.sessionsDe(id_jeu, 10, null);
+    if (estExterne(id_jeu)) {
+      const e = this.externes.get(id_jeu);
+      const v = this.visuelsExternes(e);
+      return {
+        resume,
+        sources: [{ source: e.source, id_source: e.id_source, installe: true, dossier: e.dossier, exe: this.d.exes[id_jeu] ?? e.exe, taille_octets: resume.taille_octets, vu_le: this.scan.dernier || iso(maintenant()) }],
+        hero: v.hero, logo: null, en_tete: v.en_tete, sessions_recentes,
+      };
+    }
     if (resume.steam_appid === null) {
       const m = this.d.manuels.find((x) => x.id === id_jeu);
       return {
@@ -733,7 +889,7 @@ class CoeurReel {
     const a = await this.analyser_un_chemin(chemin);
     if (a.doublon_de !== null) throw erreur('deja_present', { id_jeu: a.doublon_de });
     if (a.source === 'steam') throw erreur('deja_present');
-    const id = Math.max(ID_MANUEL, ...this.d.manuels.map((m) => m.id)) + 1;
+    const id = Math.max(ID_MANUEL, ...this.d.manuels.map((m) => m.id).filter((x) => !estExterne(x))) + 1;
     const m = { id, titre: String(titre || a.titre_propose).trim() || a.titre_propose, chemin: a.cible, icone: a.icone, ajoute_le: iso(maintenant()) };
     this.d.manuels.push(m);
     await this.ecrire();
@@ -779,12 +935,78 @@ class CoeurReel {
       }, 120_000);
       return;
     }
+    if (estExterne(id_jeu)) return this.lancerExterne(this.externes.get(id_jeu));
     const m = this.d.manuels.find((x) => x.id === id_jeu);
     if (!m || !fs.existsSync(m.chemin)) throw erreur('exe_introuvable', { id_jeu });
     let processus;
     try { processus = await this.o.lancerExe(m.chemin); } catch { throw erreur('lancement_echoue', { id_jeu }); }
     this.commencerSession(id_jeu, null, 'launcher');
     processus.fin.then(() => this.finirSession());
+  }
+
+  /**
+   * GOG : on lance l'exécutable du jeu (pas de DRM), la partie dure tant que son processus vit.
+   * Epic et EA : c'est leur launcher qui lance le jeu (connexion, protections) ; on suit ensuite
+   * le processus du jeu par son nom.
+   */
+  async lancerExterne(e) {
+    const id_jeu = e.id;
+    const choisi = this.d.exes[id_jeu] && fs.existsSync(this.d.exes[id_jeu]) ? this.d.exes[id_jeu] : null;
+    const direct = choisi || (e.source === 'gog' || !e.url ? e.exe : null);
+    if (direct) {
+      let processus;
+      try { processus = await this.o.lancerExe(direct, choisi ? [] : e.args || [], choisi ? path.dirname(choisi) : e.cwd); } catch { throw erreur('lancement_echoue', { id_jeu }); }
+      this.commencerSession(id_jeu, null, 'launcher');
+      processus.fin.then(() => {
+        // Certains jeux GOG passent la main à un second exécutable : on le suit s'il tourne encore.
+        if (this.session?.id_jeu === id_jeu) {
+          this.session.processus = path.basename(direct).toLowerCase();
+          this.session.parProcessus = true;
+          void this.surveillerUnProcessus();
+        }
+      });
+      return;
+    }
+    if (!e.url) throw erreur('exe_introuvable', { id_jeu });
+    try { await this.o.ouvrirExterne(e.url); } catch { throw erreur('launcher_absent', { source: e.source }); }
+    this.lancementAttendu = { id_jeu, quand: maintenant(), processus: e.exe ? path.basename(e.exe).toLowerCase() : null };
+    setTimeout(() => {
+      if (this.lancementAttendu?.id_jeu === id_jeu && !this.session) {
+        this.lancementAttendu = null;
+        this.emettre({ type: 'lancement_sans_session', id_jeu });
+      }
+    }, 120_000);
+  }
+
+  /** Fin d'une partie suivie par le nom de son processus (jeux Epic et EA, relais GOG). */
+  async surveillerUnProcessus() {
+    const s = this.session;
+    if (!s?.parProcessus) return;
+    const noms = await autres.processusEnCours();
+    if (noms && this.session === s && !noms.has(s.processus)) this.finirSession();
+  }
+
+  /** Une partie d'un jeu GOG, Epic ou EA a-t-elle commencé (lancée d'ici ou d'ailleurs) ? */
+  async detecterUnJeuExterne() {
+    const attendu = this.lancementAttendu && estExterne(this.lancementAttendu.id_jeu) ? this.lancementAttendu : null;
+    this.tic = (this.tic || 0) + 1;
+    // Sans lancement attendu, un coup d'œil toutes les 15 s suffit pour les jeux lancés ailleurs.
+    if (!attendu && this.tic % 3 !== 0) return;
+    const parNom = new Map();
+    for (const e of this.externes.values()) if (e.exe) parNom.set(path.basename(e.exe).toLowerCase(), e.id);
+    if (!parNom.size) return;
+    const noms = await autres.processusEnCours();
+    if (!noms || this.session) return;
+    for (const [nom, id_jeu] of parNom) {
+      if (!noms.has(nom)) continue;
+      const lance = attendu?.id_jeu === id_jeu;
+      this.lancementAttendu = null;
+      this.commencerSession(id_jeu, null, lance ? 'launcher' : 'detectee');
+      this.session.processus = nom;
+      this.session.parProcessus = true;
+      this.signaler([id_jeu]);
+      return;
+    }
   }
 
   commencerSession(id_jeu, appid, origine) {
@@ -814,7 +1036,8 @@ class CoeurReel {
       const g = this.possedes().get(s.appid);
       if (g) { g.minutes += ajout; g.minutes_2sem = (g.minutes_2sem || 0) + ajout; g.dernier = Math.floor(fin / 1000); }
       temps = this.jeuSteam(s.appid).temps;
-    } else temps = this.jeuManuel(this.d.manuels.find((m) => m.id === s.id_jeu)).temps;
+    } else if (estExterne(s.id_jeu)) temps = this.tempsDesSessions(s.id_jeu);
+    else temps = this.jeuManuel(this.d.manuels.find((m) => m.id === s.id_jeu)).temps;
     this.ecrireBientot();
     this.emettre({ type: 'session_terminee', id_jeu: s.id_jeu, duree_s, temps, succes_debloques: [] });
     this.emettre({ type: 'etat_modifie' });
@@ -831,7 +1054,10 @@ class CoeurReel {
   }
 
   async surveillerLaSession() {
-    if (this.session && this.session.appid === null) return; // jeu ajouté à la main : suivi par son processus
+    if (this.session?.parProcessus) return this.surveillerUnProcessus();
+    if (this.session && this.session.appid === null) return; // jeu lancé par Blazon : suivi par son processus
+    if (!this.session) await this.detecterUnJeuExterne();
+    if (this.session) return;
     let appid = 0;
     try { appid = await local.jeuEnCours(); } catch { return; }
     if (this.session && appid !== this.session.appid) this.finirSession();
@@ -880,10 +1106,16 @@ class CoeurReel {
 
   // ───────────── Fiche du magasin ─────────────
 
-  async fiche_du_jeu(id_jeu, forcer = false) {
+  /** Appid du magasin Steam d'un jeu : le sien, ou celui du même jeu pour GOG, Epic et EA. */
+  appidPourLaFiche(id_jeu) {
     const jeu = this.jeuParId(id_jeu);
-    if (jeu.steam_appid === null) return { donnees: null, fraicheur: null, rafraichissement: 'aucun', erreur: erreur('jeu_non_steam') };
-    const appid = jeu.steam_appid;
+    if (jeu.steam_appid !== null) return jeu.steam_appid;
+    return estExterne(id_jeu) ? this.appidDuMagasin(this.externes.get(id_jeu)) : null;
+  }
+
+  async fiche_du_jeu(id_jeu, forcer = false) {
+    const appid = this.appidPourLaFiche(id_jeu);
+    if (appid === null) return { donnees: null, fraicheur: null, rafraichissement: 'aucun', erreur: erreur('jeu_non_steam') };
     const cle = `fiche:${id_jeu}`;
     return this.lire({
       cle, domaine: 'fiche', id_jeu, source: 'fiches_magasin', duree: JOUR, forcer,
@@ -1104,9 +1336,8 @@ class CoeurReel {
   }
 
   async actualites_du_jeu(id_jeu, limite, avant, forcer = false) {
-    const jeu = this.jeuParId(id_jeu);
-    if (jeu.steam_appid === null) return { donnees: null, fraicheur: null, rafraichissement: 'aucun', erreur: erreur('jeu_non_steam') };
-    const appid = jeu.steam_appid;
+    const appid = this.appidPourLaFiche(id_jeu);
+    if (appid === null) return { donnees: null, fraicheur: null, rafraichissement: 'aucun', erreur: erreur('jeu_non_steam') };
     return this.lire({
       cle: `actus:${id_jeu}`, domaine: 'actualites', id_jeu, source: 'actualites', duree: 6 * HEURE, forcer,
       enCache: () => (this.c.actus[appid] ? { maj_le: this.c.actus[appid].maj_le, donnees: this.page(this.c.actus[appid].liste, limite, avant) } : null),
