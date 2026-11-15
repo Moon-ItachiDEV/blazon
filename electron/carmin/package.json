@@ -1,0 +1,37 @@
+{
+  "name": "blazon-carmin",
+  "productName": "Blazon Carmin",
+  "version": "0.2.0",
+  "description": "Blazon Carmin, branché sur Steam",
+  "author": "Breezydev",
+  "main": "main.js",
+  "build": {
+    "appId": "com.blazon.carmin",
+    "productName": "Blazon Carmin",
+    "files": [
+      "main.js",
+      "coeur/**/*",
+      "app/**/*"
+    ],
+    "asar": true,
+    "compression": "normal",
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "icone.png",
+      "signAndEditExecutable": false
+    },
+    "portable": {
+      "artifactName": "Blazon-Carmin.exe"
+    },
+    "directories": {
+      "output": "sortie"
+    }
+  }
+}

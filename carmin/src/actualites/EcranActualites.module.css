@@ -1,0 +1,87 @@
+/* Écran « Actualités » : la une, le ruban Par jeu, puis le fil façon magazine, regroupé par jour. */
+.note {
+  margin-bottom: var(--e5);
+}
+
+/* La une et sa colonne : côte à côte tant que la place le permet, l'une sous l'autre ensuite. */
+.tete {
+  container-type: inline-size;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) clamp(260px, 24%, 320px);
+  gap: var(--e4);
+  margin-bottom: var(--e10);
+}
+
+@media (max-width: 960px) {
+  .tete {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.outils {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e3) var(--e6);
+  margin-bottom: var(--e6);
+}
+
+/* Le jeu choisi dans le ruban : une pastille au dégradé qui se retire d'un clic. */
+.puce {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e2);
+  min-height: 36px;
+  border: 0;
+  padding: 0 var(--e3) 0 var(--e4);
+  border-radius: 999px;
+  background: var(--degrade);
+  color: var(--sur-accent);
+  font-weight: 500;
+  font-size: 14px;
+  box-shadow: var(--lueur-accent);
+  animation: surgir var(--duree-longue) var(--courbe-ressort) backwards;
+}
+
+@keyframes surgir {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+
+/* La grille du magazine : des cartes de tailles variées, qui se tassent sans laisser de trou. */
+.grille {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 248px), 1fr));
+  grid-auto-flow: row dense;
+  gap: var(--e8) var(--e6);
+}
+
+.squelettes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+}
+
+.suite {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--e8);
+  padding-bottom: var(--e10);
+}
+
+.fin {
+  margin: var(--e8) 0 var(--e10);
+  text-align: center;
+  color: var(--texte-3);
+}
+
+.fin:focus {
+  outline: none;
+}
+
+.vide {
+  color: var(--texte-3);
+  padding: var(--e4) 0;
+}

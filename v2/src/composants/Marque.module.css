@@ -1,0 +1,58 @@
+/* La marque : le blason et le nom. Le blason garde ses couleurs d'origine (dégradé violet-rose, identité validée). */
+.marque {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e3);
+}
+
+.sigle {
+  --t: var(--taille-sigle, 34px);
+  flex: none;
+  display: block;
+  width: var(--t);
+  height: var(--t);
+}
+
+.ecu {
+  fill: var(--surface-2);
+}
+
+.reflet {
+  stroke: var(--lumiere);
+}
+
+.gemme {
+  fill: var(--logo-gemme);
+}
+
+.rose {
+  stop-color: var(--logo-rose);
+}
+
+.violet {
+  stop-color: var(--logo-violet);
+}
+
+.chevron,
+.chevron2 {
+  animation: chevron var(--duree-longue) var(--courbe-ressort) backwards;
+}
+
+.chevron2 {
+  animation-delay: var(--pas-cascade);
+}
+
+@keyframes chevron {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
+.nom {
+  font-family: var(--police-titre);
+  font-size: 21px;
+  line-height: 1;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}

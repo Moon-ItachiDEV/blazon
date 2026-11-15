@@ -1,0 +1,60 @@
+/*
+ * L'avatar d'un ami et son statut. La pastille, en bas à droite, porte la couleur du statut ; un ami
+ * en jeu a en plus un anneau au dégradé d'accent. La place de l'anneau est réservée pour tous, afin
+ * que les avatars d'une liste restent alignés.
+ */
+.portrait {
+  --pastille: var(--trait-fort);
+  position: relative;
+  flex: none;
+  display: block;
+  padding: 2px;
+  border-radius: 50%;
+}
+
+/* L'avatar est séparé de l'anneau par un sillon sombre. */
+.portrait > * {
+  box-sizing: content-box;
+  border: 2px solid var(--fond);
+}
+
+.portrait::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: clamp(10px, calc(var(--taille) * 0.3), 14px);
+  aspect-ratio: 1;
+  border: 2px solid var(--fond);
+  border-radius: 50%;
+  background: var(--pastille);
+}
+
+/* En jeu : l'anneau au dégradé, et la pastille verte qui bat. */
+.portrait[data-statut='en_jeu'] {
+  --pastille: var(--succes);
+  background: var(--degrade);
+}
+
+.portrait[data-statut='en_jeu']::after {
+  animation: var(--lueur) var(--duree-lueur) ease-in-out infinite alternate;
+  animation-play-state: var(--lecture-ambiance);
+}
+
+.portrait[data-statut='en_ligne'] {
+  --pastille: var(--cyan);
+}
+
+.portrait[data-statut='absent'] {
+  --pastille: var(--alerte);
+}
+
+.portrait[data-statut='occupe'] {
+  --pastille: var(--danger);
+}
+
+/* Hors ligne : l'avatar perd ses couleurs, comme un écran éteint. */
+.portrait[data-statut='hors_ligne'] > * {
+  filter: grayscale(1);
+  opacity: 0.55;
+}

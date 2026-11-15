@@ -1,0 +1,832 @@
+/*
+ * La fiche d'un jeu. Une entrée de cinéma : l'image se pose en reculant, le titre se dévoile derrière
+ * un masque puis un reflet le traverse, la carte néon arrive par la droite, les pastilles de chiffres
+ * montent une à une et comptent. Plus bas, deux colonnes denses : présentation, galerie, succès ;
+ * sessions en barres, actualités, détails.
+ */
+.fiche {
+  /* Le bandeau de pastilles, les colonnes et l'affiche s'alignent sur ce conteneur. */
+  container-type: inline-size;
+  padding-bottom: var(--e10);
+}
+
+/* L'affiche passe sous la barre du haut et touche les bords, comme la page d'un jeu sur une console. */
+.affiche.affiche {
+  margin: calc(var(--hauteur-barre) * -1) 0 0;
+  padding-top: var(--hauteur-barre);
+  min-height: min(80vh, 740px);
+  border-radius: 0;
+  box-shadow: none;
+  /* De la place sous les boutons : le bandeau de pastilles vient mordre sur le bas de l'image. */
+  --marge-bas-affiche: calc(var(--e14) + var(--e6));
+  --lavis-rouge: 0;
+  /* La jaquette sur laquelle on a cliqué s'envole et s'agrandit jusqu'ici (voir `envol.ts`). */
+  view-transition-name: jaquette-envol;
+}
+
+/*
+ * L'image se pose : elle arrive de plus près, légèrement floue de lumière, et recule à sa place.
+ * La parallaxe est plus ample que sur l'accueil : la fiche est l'écran du jeu.
+ */
+.affiche img[data-entree] {
+  translate: calc(var(--px, 0) * -34px) calc(var(--py, 0) * -20px);
+}
+
+.affiche img[data-entree='fondu'] {
+  animation: poser calc(var(--duree-longue) * 2.4) var(--courbe) backwards;
+}
+
+.retour {
+  align-self: flex-start;
+}
+
+/* ───────────── Le haut de l'affiche ───────────── */
+
+/* Les genres en gélules de verre, au-dessus du titre. */
+.gelules {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e2);
+  margin-bottom: var(--e3);
+}
+
+.gelules > li {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--texte);
+  background: rgb(0 0 0 / 0.42);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.18);
+}
+
+/* Le titre : dévoilé de gauche à droite par un masque adouci, puis traversé par un reflet. */
+.titre.titre {
+  position: relative;
+  width: fit-content;
+  max-width: 100%;
+  animation: masquer calc(var(--duree-longue) * 1.9) var(--courbe) backwards;
+  animation-delay: calc(var(--duree-longue) * 0.5);
+}
+
+.titreTexte {
+  display: block;
+  font-family: var(--police-titre);
+  font-stretch: var(--etirement-titre);
+  font-size: calc(clamp(46px, 5.6vw, 96px) * var(--reduction, 1));
+  line-height: 1;
+  font-weight: 300;
+  letter-spacing: var(--serrage-titre);
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+  text-shadow:
+    0 2px 24px rgb(0 0 0 / 0.55),
+    0 0 42px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+.titre[data-gabarit='long'] {
+  --reduction: 0.72;
+}
+
+.titre[data-gabarit='tres_long'] {
+  --reduction: 0.5;
+}
+
+.logo {
+  display: block;
+  width: min(440px, 100%);
+  max-height: 180px;
+  object-fit: contain;
+  object-position: left bottom;
+  filter: drop-shadow(0 4px 22px rgb(0 0 0 / 0.6));
+}
+
+/* Le reflet : une bande de lumière qui passe une fois sur le titre, une fois qu'il est dévoilé. */
+.reflet {
+  position: absolute;
+  inset: -10% -20%;
+  overflow: hidden;
+  pointer-events: none;
+  mix-blend-mode: overlay;
+}
+
+.reflet::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 30%;
+  background: linear-gradient(100deg, transparent, rgb(255 255 255 / 0.9), transparent);
+  transform: translateX(-120%) skewX(-16deg);
+  animation: refleter calc(var(--duree-longue) * 1.8) var(--courbe) both;
+  animation-delay: calc(var(--duree-longue) * 2.6);
+}
+
+/* Le filet au dégradé du blason sous le titre, qui s'étire après le dévoilement. */
+.titre::after {
+  content: '';
+  display: block;
+  width: 96px;
+  height: 3px;
+  margin-top: var(--e3);
+  border-radius: 3px;
+  background: var(--degrade);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--accent-2) 70%, transparent);
+  transform-origin: left;
+  animation: etirer var(--duree-longue) var(--courbe-ressort) backwards;
+  animation-delay: calc(var(--duree-longue) * 1.6);
+}
+
+/* ───────────── La carte néon ───────────── */
+
+.neon {
+  position: relative;
+  width: min(360px, 100%);
+  border-radius: var(--rayon-l);
+  padding: 1.5px;
+  overflow: hidden;
+  isolation: isolate;
+  box-shadow:
+    0 0 0 1px rgb(255 255 255 / 0.06),
+    0 18px 50px rgb(0 0 0 / 0.55),
+    0 0 40px color-mix(in srgb, var(--accent-2) 14%, transparent);
+  animation: arriverNeon calc(var(--duree-longue) * 1.4) var(--courbe-ressort) backwards;
+  animation-delay: calc(var(--duree-longue) * 1.3);
+}
+
+/* Le liseré : un dégradé conique qui tourne derrière la carte (transform seul, sur le compositeur). */
+.neonLisere {
+  position: absolute;
+  inset: -60%;
+  z-index: -1;
+  background: conic-gradient(from 0deg, var(--violet), var(--accent), var(--accent-2), transparent 40%, transparent 60%, var(--violet));
+  animation: tourner calc(var(--duree-ambiance) / 3) linear infinite;
+  animation-play-state: var(--lecture-ambiance);
+}
+
+.neonCorps {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+  padding: 18px;
+  border-radius: calc(var(--rayon-l) - 1.5px);
+  /* Opaque : l'image de l'affiche dérive dessous, pas de verre dépoli ici. */
+  background:
+    radial-gradient(120% 70% at 100% 0%, color-mix(in srgb, var(--accent-2) 22%, transparent), transparent 60%),
+    radial-gradient(90% 80% at 0% 100%, color-mix(in srgb, var(--violet) 24%, transparent), transparent 60%),
+    color-mix(in srgb, var(--fond) 90%, var(--couleur-jeu));
+}
+
+.neonEtiquette {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent);
+}
+
+.neonSucces {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: -6px;
+  padding: 6px;
+  border-radius: var(--rayon-m);
+  transition: background-color var(--duree) var(--courbe);
+}
+
+.neonSucces:hover {
+  background: rgb(255 255 255 / 0.05);
+}
+
+.neonSuccesLigne {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.neonIcone {
+  flex: none;
+  width: 56px;
+  height: 56px;
+  border-radius: var(--rayon-s);
+  box-shadow:
+    0 0 0 1px rgb(255 255 255 / 0.18),
+    0 6px 20px color-mix(in srgb, var(--accent) 35%, transparent);
+  transition: transform var(--duree) var(--courbe-ressort);
+}
+
+.neonSucces:hover .neonIcone {
+  transform: rotate(-4deg) scale(1.08);
+}
+
+.neonSuccesTexte {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.neonSuccesTexte strong {
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 21px;
+}
+
+.neonSuccesTexte span {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--texte-2);
+}
+
+.neonPart {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--texte-3);
+}
+
+.neonJauge {
+  display: block;
+  height: 4px;
+  border-radius: 4px;
+  background: rgb(255 255 255 / 0.1);
+  overflow: hidden;
+}
+
+.neonJauge > span {
+  display: block;
+  height: 100%;
+  background: var(--degrade);
+  transform-origin: left;
+  animation: remplirJauge calc(var(--duree-longue) * 1.6) var(--courbe) backwards;
+  animation-delay: calc(var(--duree-longue) * 2);
+}
+
+.neonComplet {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 500;
+  color: var(--accent);
+}
+
+.neonFaits {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: var(--e3);
+  padding-top: var(--e3);
+  border-top: 1px solid rgb(255 255 255 / 0.08);
+}
+
+.neonFaits:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.neonFaits dt {
+  font-size: 12px;
+  color: var(--texte-3);
+}
+
+.neonFaits dd {
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.neonAmis {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: var(--e3);
+  border-top: 1px solid rgb(255 255 255 / 0.08);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.neonAmis:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.pile {
+  display: flex;
+}
+
+.pile > * {
+  box-shadow: 0 0 0 2px var(--fond);
+  border-radius: 50%;
+}
+
+.pile > * + * {
+  margin-left: -10px;
+}
+
+/* ───────────── Les pastilles de chiffres ───────────── */
+
+.pastilles {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 176px), 1fr));
+  gap: var(--e3);
+  /* Le bandeau mord sur le bas de l'affiche : image et chiffres font un seul bloc. */
+  margin: calc((var(--e14) + var(--e2)) * -1) var(--marge-page) 0;
+}
+
+/* Quatre colonnes au plus quand la place manque : la cinquième pastille (facultative) s'efface. */
+@container (max-width: 1240px) {
+  .pastille[data-facultative] {
+    display: none;
+  }
+  .pastille {
+    gap: 10px;
+    padding-right: 16px;
+  }
+  .pastilleTexte dd {
+    font-size: calc(20px * var(--echelle-titre));
+  }
+}
+
+.pastille {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  padding: 12px 22px 14px 12px;
+  border-radius: 40px;
+  overflow: hidden;
+  /* Verre sombre sans flou : l'image de l'affiche bouge dessous. */
+  background: linear-gradient(160deg, color-mix(in srgb, var(--surface-3) 86%, transparent), color-mix(in srgb, var(--fond) 92%, transparent));
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.1),
+    inset 0 1px 0 rgb(255 255 255 / 0.08),
+    0 14px 34px rgb(0 0 0 / 0.45);
+  animation: monterPastille var(--duree-longue) var(--courbe-ressort) backwards;
+  animation-delay: calc(var(--duree-longue) * 1.4 + var(--rang) * var(--pas-cascade) * 1.6);
+  transition: transform var(--duree) var(--courbe-ressort);
+}
+
+.pastille:hover {
+  transform: translateY(-3px);
+}
+
+/* La médaille tourne sur elle-même en arrivant. */
+.medaillePastille {
+  animation: frapper calc(var(--duree-longue) * 1.3) var(--courbe) backwards;
+  animation-delay: calc(var(--duree-longue) * 1.6 + var(--rang) * var(--pas-cascade) * 1.6);
+  filter: drop-shadow(0 0 10px color-mix(in srgb, var(--accent) 45%, transparent));
+}
+
+.pastille:hover .medaillePastille {
+  transform: rotate(30deg);
+  transition: transform var(--duree-longue) var(--courbe-ressort);
+}
+
+.pastilleTexte {
+  display: flex;
+  flex-direction: column-reverse;
+  min-width: 0;
+}
+
+.pastilleTexte dt {
+  font-size: 12px;
+  line-height: 15px;
+  color: var(--texte-2);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-wrap: balance;
+}
+
+.pastilleTexte dd {
+  font-family: var(--police-titre);
+  font-stretch: var(--etirement-titre);
+  font-size: calc(clamp(20px, 1.9vw, 27px) * var(--echelle-titre));
+  line-height: 1.15;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.jaugePastille {
+  position: absolute;
+  left: 78px;
+  right: 28px;
+  bottom: 8px;
+  height: 3px;
+  border-radius: 3px;
+  background: rgb(255 255 255 / 0.08);
+  overflow: hidden;
+}
+
+.jaugePastille > span {
+  display: block;
+  height: 100%;
+  background: var(--degrade);
+  transform-origin: left;
+  animation: remplirJauge calc(var(--duree-longue) * 1.8) var(--courbe) backwards;
+  animation-delay: calc(var(--duree-longue) * 1.8);
+}
+
+/* ───────────── Les colonnes ───────────── */
+
+.colonnes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--e8) var(--e10);
+  margin-top: var(--e10);
+  padding: 0 var(--marge-page);
+}
+
+.principale {
+  flex: 999 1 540px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e10);
+}
+
+.laterale {
+  flex: 1 1 340px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e10);
+}
+
+.section > h2 {
+  margin-bottom: 14px;
+}
+
+.enteteDeSection {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--e1) var(--e3);
+  margin-bottom: 14px;
+}
+
+.precision {
+  font-size: 14px;
+  color: var(--texte-3);
+}
+
+.description {
+  max-width: 820px;
+  font-size: 17px;
+  line-height: 28px;
+  color: var(--texte-2);
+  text-wrap: pretty;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e2);
+  margin-top: var(--e4);
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  background: rgb(255 255 255 / 0.05);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.1);
+  transition:
+    background-color var(--duree) var(--courbe),
+    box-shadow var(--duree) var(--courbe);
+}
+
+.tag:hover {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 50%, transparent);
+}
+
+/* ───────────── Succès ───────────── */
+
+.vitrineSucces {
+  display: flex;
+  align-items: center;
+  gap: var(--e6);
+  margin-bottom: var(--e4);
+  padding: var(--e4) var(--e5);
+  border-radius: var(--rayon-l);
+  background:
+    radial-gradient(80% 140% at 0% 50%, color-mix(in srgb, var(--violet) 20%, transparent), transparent 70%),
+    var(--panneau);
+  box-shadow: var(--arete);
+}
+
+.anneau {
+  position: relative;
+  flex: none;
+  width: 116px;
+  height: 116px;
+}
+
+.anneau svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.arret1 {
+  stop-color: var(--violet);
+}
+.arret2 {
+  stop-color: var(--accent-2);
+}
+
+.anneauFond,
+.anneauPlein {
+  fill: none;
+  stroke-width: 9;
+}
+
+.anneauFond {
+  stroke: rgb(255 255 255 / 0.08);
+}
+
+.anneauPlein {
+  stroke-linecap: round;
+  stroke-dasharray: calc(var(--part) * 100) 100;
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--accent-2) 60%, transparent));
+  animation: tracer calc(var(--duree-longue) * 2) var(--courbe) backwards;
+  animation-delay: var(--duree-longue);
+}
+
+.anneauTexte {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: var(--texte-3);
+}
+
+.anneauTexte strong {
+  font-family: var(--police-titre);
+  font-size: calc(26px * var(--echelle-titre));
+  line-height: 1.1;
+  font-weight: 500;
+  color: var(--texte);
+}
+
+.medailles {
+  flex: 1;
+  min-width: 0;
+}
+
+.medaillesTitre {
+  margin-bottom: var(--e2);
+  font-size: 13px;
+  color: var(--texte-3);
+}
+
+.rangMedailles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  /* Une seule rangée : les médailles en trop sont coupées proprement. */
+  max-height: 64px;
+  overflow: hidden;
+  padding: 3px;
+  margin: -3px;
+}
+
+/* Une médaille : elle tombe en place, et sous la souris elle s'incline vers le pointeur. */
+.medaille {
+  perspective: 300px;
+  animation: tomber var(--duree-longue) var(--courbe-ressort) backwards;
+  animation-delay: calc(var(--duree-longue) + var(--rang) * var(--pas-cascade));
+}
+
+.medaille > span {
+  transition: transform var(--duree) var(--courbe);
+  transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) scale(var(--zoom, 1));
+}
+
+.medaille:hover {
+  --zoom: 1.14;
+}
+
+.medaille:hover > span {
+  filter: drop-shadow(0 0 12px color-mix(in srgb, var(--accent) 60%, transparent));
+}
+
+.succes {
+  display: grid;
+  /* Deux colonnes au plus (chaque carte prend au moins la moitié), une seule quand la place manque. */
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, max(260px, calc((100% - var(--e3)) / 2))), 1fr));
+  gap: var(--e3);
+  margin-top: 18px;
+}
+
+.suite {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: var(--cible);
+  margin-top: var(--e2);
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.suite > svg {
+  transition: transform var(--duree) var(--courbe-ressort);
+}
+
+.suite:hover > svg {
+  transform: translateX(4px);
+}
+
+/* ───────────── Colonne latérale ───────────── */
+
+.sansSession {
+  display: flex;
+  align-items: center;
+  gap: var(--e4);
+  padding: var(--e5);
+  border-radius: var(--rayon-l);
+  background: var(--panneau);
+  box-shadow: var(--arete);
+  color: var(--texte-3);
+  font-size: 14px;
+}
+
+.sansSession > svg {
+  flex: none;
+  color: var(--accent);
+}
+
+.panneau {
+  padding: var(--e2) 18px;
+  background: var(--panneau);
+  box-shadow: var(--arete);
+  border-radius: var(--rayon-l);
+}
+
+.rangee {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--e3);
+  min-height: 42px;
+  padding: 10px 0;
+  font-size: 14px;
+}
+
+.rangee + .rangee {
+  border-top: 1px solid var(--surface-3);
+}
+
+.rangee dt {
+  color: var(--texte-3);
+}
+
+.rangee dd {
+  text-align: right;
+  font-weight: 500;
+}
+
+.actualites {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.discret {
+  color: var(--texte-3);
+  font-size: 14px;
+}
+
+.champ {
+  width: 100%;
+  height: var(--cible);
+  padding: 0 var(--e4);
+  background: var(--fond);
+  border: 1px solid var(--trait-fort);
+  border-radius: var(--rayon-m);
+}
+
+.introuvable {
+  padding: var(--e10) var(--marge-page);
+}
+
+/* ───────────── Mouvements ───────────── */
+
+@keyframes poser {
+  from {
+    opacity: 0;
+    transform: scale(1.22);
+  }
+  40% {
+    opacity: 1;
+  }
+}
+
+/* Le masque n'existe que le temps du dévoilement : posé en permanence, il isolerait le titre (et son reflet). */
+@keyframes masquer {
+  from {
+    mask-image: linear-gradient(90deg, #000 45%, transparent 55%);
+    mask-size: 240% 100%;
+    mask-repeat: no-repeat;
+    mask-position: 100% 0;
+    transform: translateX(-24px);
+  }
+  to {
+    mask-image: linear-gradient(90deg, #000 45%, transparent 55%);
+    mask-size: 240% 100%;
+    mask-repeat: no-repeat;
+    mask-position: 0 0;
+  }
+}
+
+@keyframes refleter {
+  to {
+    transform: translateX(460%) skewX(-16deg);
+  }
+}
+
+@keyframes etirer {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+@keyframes arriverNeon {
+  from {
+    opacity: 0;
+    transform: translateX(48px) rotateY(-18deg) scale(0.94);
+  }
+}
+
+@keyframes tourner {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+@keyframes remplirJauge {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+@keyframes monterPastille {
+  from {
+    opacity: 0;
+    transform: translateY(28px) scale(0.92);
+  }
+}
+
+@keyframes frapper {
+  from {
+    opacity: 0;
+    transform: rotateY(-180deg) scale(0.6);
+  }
+}
+
+@keyframes tracer {
+  from {
+    stroke-dasharray: 0 100;
+  }
+}
+
+@keyframes tomber {
+  from {
+    opacity: 0;
+    transform: translateY(-16px) scale(0.7);
+  }
+}
+
+/* Sans image de succès : un trophée sur verre sombre, à la place d'un trou. */
+.neonIconeVide {
+  display: grid;
+  place-items: center;
+  color: var(--accent);
+  background: linear-gradient(145deg, rgb(255 255 255 / 0.08), rgb(255 255 255 / 0.02));
+}

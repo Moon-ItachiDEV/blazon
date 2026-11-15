@@ -1,0 +1,32 @@
+# Dépendances et constructions
+node_modules/
+dist/
+/*/dist-apercu/
+/*/apercu/
+/*/artefact-sortie/
+electron/*/app/
+electron/*/coeur/
+electron/*/sortie/
+
+# Binaires et paquets
+*.exe
+*.zip
+*.msi
+*.blockmap
+
+# Captures, films, journaux
+*.mp4
+*.webm
+*.log
+
+# Secrets (la clé Steam ne doit jamais entrer dans le dépôt)
+.env
+.env.*
+*.pem
+*.key
+donnees.json
+cache.json
+
+# Système
+.DS_Store
+Thumbs.db

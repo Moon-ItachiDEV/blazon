@@ -1,0 +1,284 @@
+/*
+ * Jetons de l'orientation « Carmin » : noir profond et rouge, épurée. Des aplats noirs presque purs,
+ * peu de verre et peu de traits ; le rouge (carmin, écarlate, framboise) n'est pas une surface mais une
+ * lumière : un voile en bas de la barre latérale, la vitrine baignée de la couleur du jeu, le bouton Jouer.
+ * Jamais d'orange ni de jaune : les dégradés « chauds » vont du rouge profond au rose framboise.
+ * Aucun écran n'écrit une couleur, un rayon, une ombre ou une durée en dur : tout passe par ces variables.
+ *
+ * Trois formes, chacune son rôle :
+ *   - le rectangle arrondi (10 à 26 px) porte la structure : cartes, champs, listes, panneaux ;
+ *   - le dégradé (`--degrade`) est réservé à ce qui compte sur un écran : le bouton Jouer, l'élément actif,
+ *     la carte mise en avant ;
+ *   - le cercle signale une personne ou un état : avatar, pastille de statut, indicateur d'attente.
+ * Le nom historique `biseau` (classe globale) désigne désormais un cadre arrondi à liseré lumineux.
+ */
+:root {
+  color-scheme: dark;
+
+  /* Fonds, du plus profond au plus en avant : un noir à peine rougi. */
+  --fond: #0a0708;
+  --surface-1: #121011;
+  --surface-2: #1a1618;
+  --surface-3: #251f22;
+
+  /* Le fond, plus ou moins transparent : sur une image (voile), derrière une fenêtre (rideau), derrière une capture agrandie. */
+  --voile: color-mix(in srgb, var(--fond) 78%, transparent);
+  --rideau: color-mix(in srgb, var(--fond) 72%, transparent);
+  --rideau-fort: color-mix(in srgb, var(--fond) 94%, transparent);
+
+  /* Ombres de ce qui flotte au-dessus de la page : cartes posées, menus et messages, puis fenêtres. */
+  --ombre-carte: 0 18px 40px rgb(0 0 0 / 0.55);
+  --ombre-flottante: 0 18px 48px rgb(4 0 2 / 0.7);
+  --ombre-fenetre: 0 32px 96px rgb(4 0 2 / 0.85);
+  /* Ombre d'un texte posé sur une image. */
+  --ombre-texte: 0 2px 24px rgb(0 0 0 / 0.55);
+
+  /*
+   * Profondeur. Un panneau n'est pas un aplat : un verre bleuté qui laisse passer les lumières du fond,
+   * plus clair en haut, avec un filet de lumière sur son arête. `--survol` est le voile clair d'un bouton
+   * survolé, `--contour-fantome` le trait des très grands titres posés en fond de page.
+   */
+  /* Épuré : un panneau est un aplat sombre à peine plus clair que le fond, presque sans arête. */
+  --panneau: linear-gradient(170deg, rgb(255 255 255 / 0.045), rgb(255 255 255 / 0.025) 70%);
+  --panneau-fort: linear-gradient(170deg, rgb(255 255 255 / 0.07), rgb(255 255 255 / 0.035));
+  --arete: inset 0 1px 0 rgb(255 255 255 / 0.04);
+  --lisere: linear-gradient(160deg, rgb(255 255 255 / 0.1), rgb(255 255 255 / 0.02) 45%, rgb(255 255 255 / 0.04));
+  --survol: rgb(255 255 255 / 0.06);
+  --contour-fantome: rgb(255 255 255 / 0.05);
+  --lumiere: rgb(255 255 255 / 0.16);
+
+  /* Relief d'une jaquette dessinée (reflet, ombrage) et éclat qui traverse le bouton principal au survol. */
+  --reflet: rgb(255 255 255 / 0.1);
+  --ombrage: rgb(0 0 0 / 0.28);
+  --eclat: rgb(255 255 255 / 0.55);
+  /* Sur la carte au dégradé : un bouton de verre sombre, un halo blanc, un filet clair. */
+  --verre-sombre: rgb(20 4 8 / 0.32);
+  --verre-sombre-fort: rgb(20 4 8 / 0.5);
+  --verre-trait: rgb(255 255 255 / 0.22);
+  --halo-blanc: rgb(255 255 255 / 0.32);
+
+  /* Traits. --trait est décoratif ; --trait-fort borde les champs de saisie (3,3 pour 1 sur --fond). */
+  --trait: #221b1e;
+  --trait-fort: #6e5f65;
+  --trait-clair: rgb(255 255 255 / 0.32);
+
+  /* Textes. Contraste mesuré sur --fond : 18,0 / 12,9 / 7,4 pour 1. */
+  --texte: #f7f3f4;
+  --texte-2: #d0c7ca;
+  --texte-3: #a0959a;
+
+  /*
+   * Accent : le dégradé violet-rose du blason (logo). `--accent` est sa couleur du milieu, éclaircie
+   * pour un texte, un trait ou une pastille sur fond sombre (6,0 pour 1 sur --fond). Sur le dégradé,
+   * le texte est blanc et gras.
+   */
+  --accent: #ff5577;
+  --accent-2: #ff3f86;
+  --accent-3: #ff3352;
+  /* Les trois rouges de Carmin : carmin profond, écarlate, framboise. */
+  --carmin: #a3102f;
+  --ecarlate: #e3173f;
+  --framboise: #ff3f86;
+  --degrade: linear-gradient(115deg, var(--carmin) 0%, var(--ecarlate) 48%, var(--framboise) 100%);
+  --degrade-doux: linear-gradient(115deg, color-mix(in srgb, var(--ecarlate) 20%, transparent), color-mix(in srgb, var(--framboise) 14%, transparent));
+  /* La grande carte mise en avant : un dégradé riche, du rouge sang au rose framboise. */
+  --degrade-vedette: linear-gradient(150deg, #4a0612 0%, #8e0d27 32%, #d8153d 66%, #ff4d8f 100%);
+  /* Le voile rouge-rose qui monte du bas de la barre latérale (référence « Gameverse »). */
+  --voile-carmin: linear-gradient(180deg, transparent 0%, color-mix(in srgb, var(--carmin) 22%, transparent) 55%, color-mix(in srgb, var(--framboise) 30%, transparent) 100%);
+  --sur-accent: #ffffff;
+  /*
+   * Effet holographique d'une jaquette sous le pointeur : une pellicule irisée (rose, violet, cyan, vert)
+   * qui glisse avec la main, fondue en « densité couleur », et un éclat blanc sous le pointeur.
+   */
+  --holo: repeating-linear-gradient(
+    115deg,
+    rgb(255 63 134 / 0.5) 0%,
+    rgb(227 23 63 / 0.5) 7%,
+    rgb(255 200 220 / 0.4) 14%,
+    rgb(200 40 120 / 0.4) 21%,
+    rgb(255 120 160 / 0.38) 28%,
+    rgb(255 63 134 / 0.5) 35%
+  );
+  --eclat-holo: rgb(255 255 255 / 0.55);
+  /* Le halo coloré sous une jaquette survolée : sa propre image, floutée et saturée. */
+  --flou-halo: blur(26px) saturate(1.7);
+  /* La fresque derrière l'application (l'image du jeu affiché) et le verre dépoli des panneaux posés dessus. */
+  --flou-fresque: blur(9px) saturate(1.8);
+  /* Épuré : presque plus de verre. Les panneaux sont des aplats noirs, à peine transparents. */
+  --verre: none;
+  --fond-verre: color-mix(in srgb, var(--surface-1) 86%, transparent);
+
+  /* Seconde couleur du thème : un bleu électrique, pour les lumières du fond et ce qui est « en ligne ». */
+  /* Carmin : les « bleu » et « violet » hérités sont deux rouges, pour les lumières du fond et le blason. */
+  --bleu: #7a0a22;
+  --violet: #c4123a;
+  --fond-blason: #140709;
+  --gemme: #ffd3de;
+  /* Ce qui est « en ligne » : un rose pâle, distinct du vert « en jeu ». */
+  --cyan: #ff8fb3;
+  /* Halo de ce qui est actif ou survolé. */
+  --lueur-accent: 0 6px 26px color-mix(in srgb, var(--accent) 45%, transparent);
+  /* Halo plus large, sous le grand bouton Jouer : il respire. */
+  --halo-accent: 0 10px 46px 6px color-mix(in srgb, var(--accent-2) 45%, transparent);
+
+  /* États. Contraste sur --fond : 11,4 et 7,9 pour 1. */
+  /* Pas d'ambre (le propriétaire n'aime pas l'orange) : l'alerte est un rose pâle, le danger un rouge vif. */
+  --alerte: #ffb8c8;
+  --danger: #ff5c6c;
+  --succes: #3ee08f;
+
+  /* Couleur du jeu affiché. Chaque fiche la remplace par la couleur dominante de sa jaquette. */
+  --couleur-jeu: #3a0d18;
+
+  /* Rayons : franchement arrondis, comme les panneaux vitrés d'un client esport. */
+  --rayon-s: 10px;
+  --rayon-m: 14px;
+  --rayon-l: 20px;
+  --rayon-xl: 26px;
+
+  /* Cadres (classe `biseau`) : rayon du cadre, petit pour un bouton, grand pour un bloc. */
+  --biseau-s: 10px;
+  --biseau: 20px;
+  /* Jauges et barres de progression : des bouts ronds. */
+  --coupe-jauge: inset(0 round 999px);
+
+  /* Espaces (base 4) */
+  --e1: 4px;
+  --e2: 8px;
+  --e3: 12px;
+  --e4: 16px;
+  --e5: 20px;
+  --e6: 24px;
+  --e8: 32px;
+  --e10: 40px;
+  --e14: 56px;
+
+  /* Marge latérale des pages : fond avec la largeur de la fenêtre, sans point de rupture. */
+  --marge-page: clamp(20px, 2.4vw, 40px);
+  /* Hauteur de la barre du haut. Carmin n'a pas de barre d'état en bas. */
+  --hauteur-barre: 80px;
+  --hauteur-pied: 0px;
+  /* La barre latérale à libellés (à gauche) et sa forme réduite aux icônes. */
+  --largeur-rail: 84px;
+  --largeur-menu: 224px;
+  /* La colonne de droite : amis en ligne et joués récemment. */
+  --largeur-amis: 296px;
+  --largeur-amis-reduit: 0px;
+
+  /* Taille minimale d'une cible cliquable */
+  --cible: 48px;
+
+  /*
+   * Typographie, façon Apple : une seule famille, aérée. Inter (police libre la plus proche de SF Pro),
+   * avec sa taille optique : en grand, elle prend ses formes « Display ». Sur un Mac, SF Pro passe devant.
+   * Titres en semi-gras, jamais serrés ; texte en 400 avec un interligne généreux ; petites étiquettes
+   * en capitales rares et légèrement espacées. Le propriétaire n'aime pas les écritures serrées (12/11/2026).
+   */
+  --police-texte: 'SF Pro Text', -apple-system, 'Inter Variable', 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif;
+  --police-titre: 'SF Pro Display', -apple-system, 'Inter Variable', 'Segoe UI Variable Display', 'Segoe UI', system-ui, sans-serif;
+  --variantes-texte: 'cv11', 'ss03';
+  --etirement-titre: 100%;
+  --echelle-titre: 1;
+  --serrage-titre: -0.004em;
+  --espacement-etiquette: 0.05em;
+  /* Le texte courant, légèrement ouvert : la lettre respire (demande du 12/11/2026). */
+  --interlettrage: 0.012em;
+  /* Graisses : titres légers ou moyens, jamais noirs. */
+  --graisse-titre: 500;
+  --graisse-affiche: 400;
+
+  /* Mouvement. La courbe démarre vite et freine longtemps : une réponse nette, sans rebond. */
+  --duree-courte: 140ms;
+  --duree: 240ms;
+  --courbe: cubic-bezier(0.2, 0, 0, 1);
+  /* Petit dépassement pour ce qui « saute » : une icône du rail, une pastille. */
+  --courbe-ressort: cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* Une entrée d'écran, un volet qui découvre une image : assez long pour être vu, pas pour faire attendre. */
+  --duree-longue: 620ms;
+  /* Écart entre deux éléments qui entrent l'un après l'autre (titre, chiffres, boutons ; cartes d'une rangée). */
+  --pas-cascade: 60ms;
+  /* Un chiffre qui compte jusqu'à sa valeur. Lu par `NombreAnime`. */
+  --duree-compte: 900ms;
+
+  /*
+   * Ambiance : ce qui bouge sans qu'on y touche (lumières du fond, image de l'affiche, braises, reflet
+   * du bouton Jouer, dégradés qui ondulent). Toujours lent, toujours sur `transform` et `opacity`
+   * (sauf les dégradés, voir `--duree-moire`). `--lecture-ambiance` fige tout d'un coup.
+   */
+  --duree-ambiance: 26s;
+  --duree-balayage: 6s;
+  /* Un dégradé d'accent qui glisse lentement sur lui-même (bouton Jouer, carte vedette, élément actif). */
+  --duree-moire: 7s;
+  --lecture-ambiance: running;
+  /*
+   * Les grandes surfaces (lumières du fond, image de l'affiche) ne bougent que huit fois par seconde.
+   * À leur vitesse, moins d'un pixel par pas, l'œil voit un mouvement continu.
+   */
+  --cadence-ambiance: steps(208, end);
+
+  /* Animations en boucle : un tour de l'indicateur d'attente, un battement de squelette (`lueur`, dans base.css). */
+  --duree-tour: 900ms;
+  --duree-lueur: 900ms;
+  --lueur: lueur;
+
+  /* Trame du fond de page : une poussière d'étoiles, à peine visible. Les lumières sont ajoutées par `Decor`. */
+  --trame:
+    radial-gradient(1px 1px at 20% 30%, rgb(255 255 255 / 0.08), transparent 60%) 0 0 / 220px 220px,
+    radial-gradient(1px 1px at 70% 80%, rgb(255 160 180 / 0.08), transparent 60%) 0 0 / 300px 300px;
+
+  /* Taille des jaquettes de la grille : remplacée par le réglage du joueur. */
+  --taille-jaquette: 180px;
+}
+
+/*
+ * La couleur qui éclaire le fond de page : celle du jeu à l'écran. Déclarée comme une vraie couleur
+ * pour que le passage d'un jeu à l'autre soit un fondu et non un saut.
+ */
+@property --couleur-ambiance {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #3a0d18;
+}
+
+/*
+ * Teintes dérivées de la couleur du jeu. Une variable calculée est figée là où elle est définie :
+ * pour qu'elle suive la couleur d'un jeu, il faut la recalculer sur l'élément qui change cette
+ * couleur. Cet élément porte donc l'attribut `data-couleur-jeu` (voir `couleurDeJeu`).
+ */
+:root,
+[data-couleur-jeu] {
+  --teinte-jeu: color-mix(in oklab, var(--couleur-jeu) 30%, var(--fond));
+  --trait-jeu: color-mix(in oklab, var(--couleur-jeu) 62%, var(--texte) 14%);
+}
+
+/*
+ * Animations coupées par Windows ou par le réglage de l'application. L'indicateur d'attente tourne
+ * encore, lentement : immobile, il ne dirait plus que quelque chose est en cours. Le battement s'arrête.
+ */
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-animations='activees']) {
+    --duree-courte: 0ms;
+    --duree: 0ms;
+    --duree-longue: 0ms;
+    --pas-cascade: 0ms;
+    --duree-compte: 0ms;
+    --lecture-ambiance: paused;
+    --duree-tour: 2400ms;
+    --lueur: none;
+  }
+}
+:root[data-animations='desactivees'] {
+  --duree-courte: 0ms;
+  --duree: 0ms;
+  --duree-longue: 0ms;
+  --pas-cascade: 0ms;
+  --duree-compte: 0ms;
+  --lecture-ambiance: paused;
+  --duree-tour: 2400ms;
+  --lueur: none;
+}
+
+/* Pendant une partie (attribut posé par `Decor`), l'ambiance se fige même si les animations sont permises. */
+:root[data-ambiance='figee'] {
+  --lecture-ambiance: paused;
+}

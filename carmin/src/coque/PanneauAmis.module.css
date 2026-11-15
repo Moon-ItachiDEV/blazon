@@ -1,0 +1,245 @@
+/*
+ * Le panneau d'amis : une colonne à droite, sous la barre, qui reste en place quand la page défile.
+ * Ouvert : avatar, pseudo, activité. Réduit : les avatars seuls, avec leur pastille de statut.
+ */
+.panneau {
+  position: sticky;
+  top: var(--hauteur-barre);
+  width: var(--largeur-amis);
+  height: calc(100vh - var(--hauteur-barre) - var(--hauteur-pied));
+  display: flex;
+  flex-direction: column;
+  gap: var(--e5);
+  padding: var(--e5) var(--e4) var(--e4);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  /* Pas de flou d'arrière-plan : devant un fond qui bouge, il serait recalculé à chaque image. */
+  background: linear-gradient(180deg, color-mix(in srgb, var(--surface-1) 72%, transparent), color-mix(in srgb, var(--fond) 80%, transparent));
+  border-left: 1px solid var(--trait);
+  view-transition-name: panneau-amis;
+  transition: width var(--duree) var(--courbe);
+}
+
+.panneau[data-etat='reduit'] {
+  width: var(--largeur-amis-reduit);
+  padding-inline: 0;
+  align-items: center;
+}
+
+/* Fenêtre étroite : le contenu passe avant, la liste complète reste à un onglet de là. */
+@media (max-width: 1100px) {
+  .panneau {
+    display: none;
+  }
+}
+
+.entete {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e3);
+  min-height: 40px;
+}
+
+.bascule {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  background: transparent;
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-s);
+  color: var(--texte-3);
+  transition:
+    border-color var(--duree-courte) var(--courbe),
+    color var(--duree-courte) var(--courbe);
+}
+
+.bascule:hover {
+  border-color: var(--texte);
+  color: var(--texte);
+}
+
+.groupe {
+  flex: none;
+  width: 100%;
+}
+
+.nomDuGroupe {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e2);
+  margin-bottom: var(--e2);
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--trait);
+  font-family: var(--police-titre);
+  font-stretch: var(--etirement-titre);
+  font-size: calc(11px * var(--echelle-titre));
+  line-height: 18px;
+  font-weight: 500;
+  letter-spacing: var(--espacement-etiquette);
+  text-transform: none;
+  color: var(--texte-3);
+}
+
+.panneau[data-etat='reduit'] .nomDuGroupe {
+  justify-content: center;
+  margin-inline: var(--e3);
+}
+
+.nombre {
+  color: var(--accent);
+  letter-spacing: 0;
+}
+
+.liste {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.personne {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--e3);
+  min-height: 52px;
+  padding: 6px var(--e2);
+  border-radius: var(--rayon-m);
+  transition: background-color var(--duree-courte) var(--courbe);
+}
+
+.panneau[data-etat='reduit'] .personne {
+  justify-content: center;
+  padding-inline: 0;
+}
+
+/* Un ami qui mène à une fiche réagit au survol : une barre d'accent glisse à sa gauche. */
+a.personne::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 10px;
+  bottom: 10px;
+  width: 3px;
+  border-radius: 3px;
+  background: var(--degrade);
+  transform: scaleY(0);
+  transition: transform var(--duree) var(--courbe);
+}
+
+a.personne:hover {
+  background: var(--survol);
+}
+
+a.personne:hover::before {
+  transform: none;
+}
+
+/* Réduit, un portrait grandit un peu sous le pointeur. */
+.panneau[data-etat='reduit'] .personne .portrait {
+  transition: transform var(--duree) var(--courbe-ressort);
+}
+
+.panneau[data-etat='reduit'] .personne:hover .portrait {
+  transform: scale(1.12);
+}
+
+/* Le portrait porte la pastille de statut, en bas à droite. */
+.portrait {
+  position: relative;
+  flex: none;
+  display: block;
+}
+
+.portrait::after {
+  content: '';
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--fond);
+  border-radius: 50%;
+  background: var(--cyan);
+}
+
+/* En jeu : pastille verte qui bat, et un anneau au dégradé autour du portrait. */
+.portrait[data-statut='en_jeu']::after {
+  background: var(--succes);
+  animation: var(--lueur) var(--duree-lueur) ease-in-out infinite alternate;
+}
+
+.portrait[data-statut='en_jeu'] {
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--fond), 0 0 0 4px var(--accent);
+}
+
+.portrait[data-statut='absent']::after,
+.portrait[data-statut='occupe']::after {
+  background: var(--alerte);
+}
+
+.texte {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.pseudo {
+  overflow: hidden;
+  font-weight: 500;
+  line-height: 20px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.activite {
+  overflow: hidden;
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--texte-3);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.activite[data-statut='en_jeu'] {
+  color: var(--accent);
+}
+
+.autres,
+.vide {
+  margin-top: var(--e2);
+  padding-inline: var(--e2);
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--texte-3);
+}
+
+.tous {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e2);
+  min-height: var(--cible);
+  margin-top: auto;
+  padding: 0 var(--e3);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-m);
+  background: var(--panneau);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--texte-2);
+  transition:
+    border-color var(--duree-courte) var(--courbe),
+    color var(--duree-courte) var(--courbe);
+}
+
+.tous:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}

@@ -1,0 +1,56 @@
+.formulaire {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e3);
+  max-width: 560px;
+}
+
+.rangee {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--e2);
+}
+
+.rangee > :first-child {
+  flex: 1 1 280px;
+}
+
+.verdict {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--e2);
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--texte-2);
+}
+
+.verdict svg {
+  margin-top: 1px;
+}
+
+.accepte svg {
+  color: var(--accent);
+}
+
+.attente svg {
+  color: var(--alerte);
+}
+
+.lien {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.lien:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}

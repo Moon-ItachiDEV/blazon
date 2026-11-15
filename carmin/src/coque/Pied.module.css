@@ -1,0 +1,73 @@
+/* La barre d'état : une ligne fine collée au bas de la fenêtre, lue comme un tableau de bord. */
+.pied {
+  position: sticky;
+  bottom: 0;
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  gap: var(--e6);
+  height: var(--hauteur-pied);
+  padding: 0 var(--marge-page);
+  overflow: hidden;
+  background: color-mix(in srgb, var(--fond) 94%, transparent);
+  border-top: 1px solid var(--trait);
+  font-family: var(--police-titre);
+  font-stretch: var(--etirement-titre);
+  font-size: calc(11px * var(--echelle-titre));
+  line-height: 1;
+  font-weight: 500;
+  letter-spacing: var(--espacement-etiquette);
+  text-transform: none;
+  color: var(--texte-3);
+  white-space: nowrap;
+  view-transition-name: pied;
+}
+
+.etat {
+  display: flex;
+  align-items: center;
+  gap: var(--e2);
+  color: var(--texte-2);
+}
+
+/* Le voyant bat doucement tant que l'application est en ligne. */
+.voyant {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--alerte);
+}
+
+.etat[data-etat='en_ligne'] .voyant {
+  background: var(--accent);
+  box-shadow: var(--lueur-accent);
+  animation: var(--lueur) var(--duree-lueur) ease-in-out infinite alternate;
+}
+
+.analyse {
+  color: var(--accent);
+}
+
+.chiffres {
+  display: flex;
+  gap: var(--e6);
+  margin-left: auto;
+}
+
+.chiffres > div {
+  display: flex;
+  align-items: baseline;
+  gap: var(--e2);
+}
+
+.chiffres dd {
+  color: var(--texte);
+  letter-spacing: 0.04em;
+}
+
+/* Fenêtre étroite : la connexion et deux chiffres suffisent. */
+@media (max-width: 760px) {
+  .chiffres > div:nth-child(n + 3) {
+    display: none;
+  }
+}

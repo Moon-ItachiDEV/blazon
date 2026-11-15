@@ -1,0 +1,165 @@
+/* Éléments de formulaire : ligne de réglage, interrupteur, champ de texte, choix parmi quelques valeurs. */
+.ligne {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e2) var(--e6);
+  min-height: 64px;
+  padding: var(--e3) 0;
+}
+
+.ligne + .ligne {
+  border-top: 1px solid var(--surface-3);
+}
+
+.ligneTexte {
+  flex: 1 1 280px;
+  min-width: 0;
+}
+
+.ligneNom {
+  font-weight: 500;
+}
+
+.ligneAide {
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--texte-3);
+  text-wrap: pretty;
+}
+
+.ligneCommande {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e2);
+}
+
+/* Interrupteur : un vrai bouton `role="switch"`, 52 × 32, dans une cible de 48 px de haut. */
+.interrupteur {
+  position: relative;
+  flex: none;
+  width: 52px;
+  height: 32px;
+  margin: 8px 0;
+  padding: 0;
+  background: var(--surface-3);
+  border: 1px solid var(--trait-fort);
+  border-radius: var(--rayon-l);
+  transition:
+    background-color var(--duree-courte) var(--courbe),
+    border-color var(--duree-courte) var(--courbe);
+}
+
+.interrupteur::after {
+  content: '';
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--texte-2);
+  transition:
+    transform var(--duree-courte) var(--courbe),
+    background-color var(--duree-courte) var(--courbe);
+}
+
+.interrupteur[aria-checked='true'] {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.interrupteur[aria-checked='true']::after {
+  transform: translateX(20px);
+  background: var(--sur-accent);
+}
+
+.interrupteur:disabled {
+  opacity: 0.5;
+}
+
+.champ {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.champNom {
+  font-weight: 500;
+}
+
+.champAide {
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--texte-3);
+}
+
+.champErreur {
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--danger);
+}
+
+.saisie {
+  width: 100%;
+  height: var(--cible);
+  padding: 0 var(--e4);
+  background: var(--fond);
+  border: 1px solid var(--trait-fort);
+  border-radius: var(--rayon-m);
+  color: var(--texte);
+}
+
+.saisie::placeholder {
+  color: var(--texte-3);
+}
+
+.saisie[aria-invalid='true'] {
+  border-color: var(--danger);
+}
+
+.saisie:disabled {
+  opacity: 0.6;
+}
+
+/* Choix parmi deux à quatre valeurs, côte à côte. */
+.segments {
+  display: inline-flex;
+  flex-wrap: wrap;
+  padding: 3px;
+  background: var(--fond);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-m);
+}
+
+.segment {
+  min-height: 40px;
+  padding: 0 var(--e4);
+  background: transparent;
+  border: 0;
+  border-radius: var(--rayon-s);
+  color: var(--texte-2);
+  font-family: var(--police-titre);
+  font-stretch: var(--etirement-titre);
+  font-size: calc(13px * var(--echelle-titre));
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: none;
+  transition:
+    background-color var(--duree-courte) var(--courbe),
+    color var(--duree-courte) var(--courbe);
+}
+
+.segment:hover {
+  color: var(--texte);
+}
+
+.segment[aria-checked='true'] {
+  background: var(--degrade);
+  color: var(--sur-accent);
+  box-shadow: var(--lueur-accent);
+  font-weight: 500;
+}

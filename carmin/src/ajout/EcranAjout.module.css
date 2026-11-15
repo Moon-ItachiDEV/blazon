@@ -1,0 +1,812 @@
+/*
+ * Ajout manuel : un assistant visuel. Trois étapes reliées par un trait qui se remplit, une zone de
+ * dépôt vivante à gauche, et à droite la future jaquette qui se construit sur une étagère, entre de
+ * vraies jaquettes de la bibliothèque.
+ */
+
+/* La couleur de la future jaquette, déclarée comme une vraie couleur : elle passe d'un titre à l'autre en fondu. */
+@property --couleur-futur {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #2a1d21;
+}
+
+/* ── Les étapes */
+
+.etapes {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  max-width: 720px;
+  margin-bottom: var(--e8);
+}
+
+.etapesTrait {
+  position: absolute;
+  top: 19px;
+  left: calc(100% / 6);
+  right: calc(100% / 6);
+  height: 2px;
+  border-radius: 2px;
+  background: rgb(255 255 255 / 0.1);
+}
+
+.etapesTrait > span {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--degrade);
+  box-shadow: var(--lueur-accent);
+  transform-origin: left;
+  transform: scaleX(calc(var(--etape) / 2));
+  transition: transform var(--duree-longue) var(--courbe-ressort);
+}
+
+/* Pendant l'analyse ou l'ajout, une lueur file le long du trait vers l'étape suivante. */
+.etapes[data-en-cours] .etapesTrait::after {
+  content: '';
+  position: absolute;
+  inset: -4px 0;
+  background: radial-gradient(28px 5px at 50% 50%, #ffffff, color-mix(in srgb, var(--accent) 60%, transparent) 60%, transparent);
+  animation: filer calc(var(--duree-balayage) / 4) var(--courbe) infinite;
+  animation-play-state: var(--lecture-ambiance);
+}
+
+@keyframes filer {
+  from {
+    opacity: 0;
+    transform: translateX(-50%);
+  }
+  25% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    transform: translateX(50%);
+  }
+}
+
+.etape {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--e2);
+  text-align: center;
+}
+
+.etapeRond {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.14);
+  font-weight: 500;
+  color: var(--texte-3);
+  transition:
+    transform var(--duree) var(--courbe-ressort),
+    box-shadow var(--duree) var(--courbe);
+}
+
+.etape[data-etat='active'] .etapeRond {
+  background: var(--degrade);
+  color: var(--sur-accent);
+  box-shadow: var(--lueur-accent);
+  transform: scale(1.12);
+}
+
+/* L'étape en cours bat doucement : une onde s'en échappe. */
+.etape[data-etat='active'] .etapeRond::after {
+  content: '';
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  animation: onde calc(var(--duree-balayage) / 3) var(--courbe) infinite;
+  animation-play-state: var(--lecture-ambiance);
+}
+
+@keyframes onde {
+  from {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.7);
+  }
+}
+
+.etape[data-etat='faite'] .etapeRond {
+  background: color-mix(in srgb, var(--accent) 22%, var(--surface-2));
+  color: var(--texte);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 60%, transparent);
+}
+
+.etapeNom {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--texte-3);
+  transition: color var(--duree) var(--courbe);
+}
+
+.etape[data-etat='active'] .etapeNom,
+.etape[data-etat='faite'] .etapeNom {
+  color: var(--texte);
+}
+
+/* ── L'atelier : l'assistant à gauche, l'aperçu à droite */
+
+.atelier {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 440px);
+  align-items: start;
+  gap: var(--e10);
+  padding-bottom: var(--e14);
+}
+
+@media (max-width: 1100px) {
+  .atelier {
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 340px);
+    gap: var(--e6);
+  }
+}
+
+@media (max-width: 820px) {
+  .atelier {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.colonne {
+  min-width: 0;
+}
+
+/* ── La zone de dépôt */
+
+.depot {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e5);
+  padding: var(--e8) var(--e6) var(--e6);
+  border-radius: 28px;
+  background:
+    radial-gradient(500px 220px at 15% 0%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 70%),
+    linear-gradient(165deg, rgb(255 255 255 / 0.06), rgb(255 255 255 / 0.02));
+  transition:
+    transform var(--duree) var(--courbe-ressort),
+    box-shadow var(--duree) var(--courbe);
+}
+
+.depot[data-survol='true'] {
+  transform: scale(1.012);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--accent) 60%, transparent),
+    0 0 60px -10px color-mix(in srgb, var(--accent) 60%, transparent);
+}
+
+.pointilles {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.pointilles rect {
+  width: calc(100% - 2px);
+  height: calc(100% - 2px);
+  fill: none;
+  stroke: rgb(255 255 255 / 0.2);
+  stroke-width: 1.5;
+  stroke-dasharray: 8 9;
+  transition: stroke var(--duree) var(--courbe);
+}
+
+.depot[data-rempli] .pointilles rect {
+  stroke: rgb(255 255 255 / 0.12);
+  stroke-dasharray: none;
+}
+
+/* Un fichier survole la zone : les pointillés s'allument et défilent. */
+.depot[data-survol='true'] .pointilles rect {
+  stroke: var(--accent);
+  stroke-dasharray: 8 9;
+  animation: defiler calc(var(--duree-balayage) / 8) linear infinite;
+}
+
+@keyframes defiler {
+  to {
+    stroke-dashoffset: -34;
+  }
+}
+
+/* Une fois le fichier analysé, la zone se resserre sur le chemin : l'étape suivante passe devant. */
+.depot[data-compact] {
+  padding-top: var(--e6);
+}
+
+.depot[data-compact] .depotEntete {
+  display: none;
+}
+
+.depotEntete {
+  display: flex;
+  align-items: center;
+  gap: var(--e6);
+}
+
+.depotTitre {
+  font-family: var(--police-titre);
+  font-size: calc(22px * var(--echelle-titre));
+  line-height: 1.25;
+  font-weight: 500;
+}
+
+.depotTexte {
+  margin-top: 4px;
+  font-size: 15px;
+  line-height: 22px;
+  color: var(--texte-3);
+}
+
+/* Le fichier dessiné : une feuille qui flotte, et dont l'extension change toute seule. */
+.document {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 96px;
+  height: 96px;
+  border-radius: 24px;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--accent) 30%, transparent), transparent);
+}
+
+.feuille {
+  position: relative;
+  width: 58px;
+  height: 72px;
+  border-radius: 10px 18px 10px 10px;
+  background: linear-gradient(160deg, rgb(255 255 255 / 0.22), rgb(255 255 255 / 0.06));
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.25),
+    0 14px 30px rgb(0 0 0 / 0.45);
+  animation: flotter calc(var(--duree-balayage) * 0.6) ease-in-out infinite alternate;
+  animation-play-state: var(--lecture-ambiance);
+  transition: transform var(--duree) var(--courbe-ressort);
+}
+
+.depot[data-survol='true'] .feuille {
+  animation: none;
+  transform: translateY(-10px) rotate(-8deg) scale(1.12);
+}
+
+@keyframes flotter {
+  from {
+    transform: translateY(3px) rotate(-2deg);
+  }
+  to {
+    transform: translateY(-5px) rotate(2deg);
+  }
+}
+
+.coin {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 18px;
+  height: 18px;
+  border-radius: 0 18px 0 8px;
+  background: linear-gradient(225deg, transparent 50%, rgb(255 255 255 / 0.35) 50%);
+}
+
+.feuilleExtension {
+  position: absolute;
+  left: 50%;
+  bottom: 10px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: var(--degrade);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sur-accent);
+  opacity: 0;
+  transform: translateX(-50%);
+  animation: tourner-extension var(--duree-balayage) var(--courbe) infinite;
+  animation-delay: calc(var(--i) * var(--duree-balayage) / 3);
+  animation-play-state: var(--lecture-ambiance);
+}
+
+/* Chaque extension tient un tiers du cycle : elle monte, reste, puis s'efface. */
+/* Chaque extension tient un tiers du cycle. Figée, la première reste visible. */
+@keyframes tourner-extension {
+  0%,
+  22% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  30% {
+    opacity: 0;
+    transform: translate(-50%, -8px);
+  }
+  92% {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+.rangee {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--e2);
+}
+
+.rangee > :first-child {
+  flex: 1 1 300px;
+  min-width: 0;
+}
+
+/* Aligné sur le champ et non sur l'aide dessous : hauteur du nom du champ (22 px) + son écart (6 px). */
+.boutonAnalyser {
+  margin-top: 28px;
+}
+
+.lienTexte {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  margin-top: calc(-1 * var(--e3));
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.lienTexte:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.section {
+  margin-top: var(--e8);
+}
+
+.section > h2 {
+  margin-bottom: 14px;
+}
+
+/* Le titre reçoit le focus par programme quand l'aperçu arrive ; ce n'est pas une commande. */
+.focusDeTitre:focus,
+.focusDeTitre:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+/* ── Ce que l'on peut ajouter : trois cartes */
+
+.types {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: var(--e3);
+}
+
+.type {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+  padding: var(--e5);
+  border-radius: var(--rayon-l);
+  background: linear-gradient(165deg, rgb(255 255 255 / 0.06), rgb(255 255 255 / 0.02));
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.07);
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--texte-2);
+  animation: monterType var(--duree-longue) var(--courbe) backwards;
+  animation-delay: calc(var(--duree) + var(--i) * var(--pas-cascade));
+  transition:
+    transform var(--duree) var(--courbe-ressort),
+    box-shadow var(--duree) var(--courbe);
+}
+
+.type:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.14),
+    0 18px 40px -20px color-mix(in srgb, var(--accent) 60%, transparent);
+}
+
+@keyframes monterType {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+
+.extension {
+  width: fit-content;
+  font-family: var(--police-titre);
+  font-size: 26px;
+  line-height: 1;
+  font-weight: 500;
+  background: var(--degrade);
+  background-clip: text;
+  color: transparent;
+}
+
+/* ── L'étape du titre : une carte de verre qui glisse en place */
+
+.carte {
+  padding: var(--e6);
+  border-radius: var(--rayon-xl);
+  background:
+    radial-gradient(420px 200px at 0% 0%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 70%),
+    linear-gradient(165deg, rgb(255 255 255 / 0.07), rgb(255 255 255 / 0.025));
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.08),
+    inset 0 0 0 1px rgb(255 255 255 / 0.07);
+}
+
+.etapeTitre {
+  animation: glisser var(--duree-longue) var(--courbe-ressort) backwards;
+}
+
+@keyframes glisser {
+  from {
+    opacity: 0;
+    transform: translateX(-26px) scale(0.98);
+  }
+}
+
+.details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--e5);
+  min-width: 0;
+}
+
+.titreDuJeu {
+  font-family: var(--police-titre);
+  font-size: calc(22px * var(--echelle-titre));
+  line-height: calc(28px * var(--echelle-titre));
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.proprietes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--e3);
+}
+
+.propriete {
+  padding: var(--e3) var(--e4);
+  border-radius: var(--rayon-m);
+  background: rgb(0 0 0 / 0.22);
+}
+
+.propriete dt {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  color: var(--texte-3);
+}
+
+.propriete dd {
+  margin-top: 4px;
+}
+
+.cible {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--e2);
+  /* Un chemin Windows n'a pas d'espace où couper : on coupe n'importe où plutôt que de déborder. */
+  overflow-wrap: anywhere;
+}
+
+.cible img {
+  flex: none;
+  margin-top: 1px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e2);
+}
+
+/* ── L'aperçu : la future jaquette sur son étagère */
+
+.scene {
+  position: sticky;
+  top: calc(var(--hauteur-barre) + var(--e6));
+  overflow: hidden;
+  padding: var(--e5) 0 var(--e6);
+  border-radius: var(--rayon-xl);
+  background:
+    radial-gradient(360px 260px at 50% 45%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 70%),
+    linear-gradient(180deg, rgb(255 255 255 / 0.05), rgb(255 255 255 / 0.015));
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.07),
+    0 30px 70px -30px rgb(0 0 0 / 0.8);
+}
+
+@media (max-width: 820px) {
+  .scene {
+    position: static;
+  }
+}
+
+.sceneEtiquette {
+  display: flex;
+  align-items: center;
+  gap: var(--e2);
+  padding: 0 var(--e5);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--texte-3);
+}
+
+.scenePoint {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent);
+}
+
+.etagere {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 14px;
+  padding: var(--e8) 0 var(--e8);
+  perspective: 1100px;
+}
+
+/* Le plateau de l'étagère : un trait de lumière sous les jaquettes. */
+.etagere::after {
+  content: '';
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: calc(var(--e8) - 10px);
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.25), color-mix(in srgb, var(--accent) 70%, transparent), rgb(255 255 255 / 0.25), transparent);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--accent) 50%, transparent);
+}
+
+.voisin {
+  flex: none;
+  width: 92px;
+  opacity: 0.45;
+  filter: saturate(0.7);
+  transform: rotateY(28deg) scale(0.92);
+  transform-origin: right bottom;
+}
+
+.futur ~ .voisin {
+  transform: rotateY(-28deg) scale(0.92);
+  transform-origin: left bottom;
+}
+
+.voisin:first-child,
+.voisin:last-child {
+  opacity: 0.22;
+}
+
+.futur {
+  --couleur-futur: #2a1d21;
+  position: relative;
+  flex: none;
+  width: clamp(150px, 13vw, 190px);
+  aspect-ratio: 2 / 3;
+  border-radius: var(--rayon-m);
+  transform: perspective(900px) rotateX(calc(var(--rx, 0deg) * 0.7)) rotateY(calc(var(--ry, 0deg) * 0.7));
+  transition:
+    transform var(--duree-longue) var(--courbe),
+    --couleur-futur calc(var(--duree-longue) * 0.8) var(--courbe);
+  animation: poser var(--duree-longue) var(--courbe-ressort) backwards;
+  animation-delay: var(--duree);
+}
+
+@keyframes poser {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.9);
+  }
+}
+
+/* Le halo à la couleur du jeu, derrière la jaquette. */
+.futur::before {
+  content: '';
+  position: absolute;
+  inset: -30%;
+  z-index: -1;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--couleur-futur) 90%, var(--accent) 30%), transparent);
+  opacity: 0.7;
+}
+
+.futurCadre {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 2px dashed rgb(255 255 255 / 0.28);
+  transition: opacity var(--duree) var(--courbe);
+}
+
+.futur[data-titre] .futurCadre {
+  opacity: 0;
+}
+
+.futurFond {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  background:
+    radial-gradient(120% 70% at 20% 0%, rgb(255 255 255 / 0.22), transparent 60%),
+    linear-gradient(160deg, color-mix(in srgb, var(--couleur-futur) 80%, #ffffff 20%), var(--couleur-futur) 45%, color-mix(in srgb, var(--couleur-futur) 55%, #000000));
+  box-shadow:
+    0 24px 50px rgb(0 0 0 / 0.55),
+    inset 0 0 0 1px rgb(255 255 255 / 0.16);
+  opacity: 0;
+  transform: scale(0.94);
+  transition:
+    opacity var(--duree-longue) var(--courbe),
+    transform var(--duree-longue) var(--courbe-ressort);
+}
+
+.futur[data-titre] .futurFond {
+  opacity: 1;
+  transform: none;
+}
+
+/* Le texte, posé comme sur une jaquette dessinée de la bibliothèque : le titre en haut, la source en bas. */
+.futurTexte {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--e2);
+  padding: 12% 9%;
+  container-type: inline-size;
+}
+
+.futurIcone {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  animation: surgir var(--duree-longue) var(--courbe-ressort) backwards;
+}
+
+@keyframes surgir {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+}
+
+.futurTitre {
+  font-family: var(--police-titre);
+  font-weight: 500;
+  font-size: calc(clamp(13px, 11cqi, 22px) * var(--echelle-titre));
+  line-height: 1.22;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 5;
+  overflow: hidden;
+  text-shadow: 0 2px 12px rgb(0 0 0 / 0.35);
+}
+
+.futurLignes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.futurLignes > span {
+  height: 12px;
+  border-radius: 6px;
+  background: rgb(255 255 255 / 0.12);
+  animation: var(--lueur) var(--duree-lueur) ease-in-out infinite alternate;
+}
+
+.futurLignes > span:nth-child(2) {
+  width: 70%;
+}
+
+.futurLignes > span:nth-child(3) {
+  width: 45%;
+}
+
+.futurSource {
+  margin-top: auto;
+  font-size: clamp(10px, 7.5cqi, 13px);
+  line-height: 1.4;
+  color: rgb(255 255 255 / 0.85);
+}
+
+/* Un éclat balaie la jaquette à chaque étape franchie. */
+.futurEclat {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.futurEclat::after {
+  content: '';
+  position: absolute;
+  top: -20%;
+  bottom: -20%;
+  left: 0;
+  width: 45%;
+  background: linear-gradient(100deg, transparent, rgb(255 255 255 / 0.4), transparent);
+  transform: translateX(-180%) skewX(-12deg);
+  animation: balayer calc(var(--duree-longue) * 1.8) var(--courbe) backwards;
+  animation-delay: var(--duree);
+}
+
+@keyframes balayer {
+  to {
+    transform: translateX(320%) skewX(-12deg);
+  }
+}
+
+/* Pendant l'analyse, une ligne de lumière parcourt la jaquette, comme un scanner. */
+.futur[data-analyse]::after {
+  content: '';
+  position: absolute;
+  left: -6%;
+  right: -6%;
+  top: 0;
+  height: 3px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, transparent, #ffffff, transparent);
+  box-shadow: 0 0 18px var(--accent), 0 0 4px #ffffff;
+  animation: scanner calc(var(--duree-balayage) / 4) ease-in-out infinite alternate;
+  animation-play-state: var(--lecture-ambiance);
+}
+
+@keyframes scanner {
+  to {
+    transform: translateY(calc(clamp(150px, 13vw, 190px) * 1.5));
+  }
+}
+
+.sceneLegende {
+  padding: 0 var(--e6);
+  text-align: center;
+}
+
+.sceneTitre {
+  font-family: var(--police-titre);
+  font-size: 19px;
+  line-height: 1.3;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.sceneTexte {
+  margin-top: 4px;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--texte-3);
+  text-wrap: balance;
+}

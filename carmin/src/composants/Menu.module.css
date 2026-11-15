@@ -1,0 +1,89 @@
+/*
+ * Menu déroulant sans bibliothèque : l'attribut `popover` gère l'ouverture, la fermeture au clic
+ * extérieur et la touche Échap ; le positionnement par ancre (`anchor()`) le colle à son bouton
+ * et le retourne tout seul s'il manque de place. Tous deux sont natifs dans WebView2.
+ */
+.menu {
+  position: fixed;
+  inset: auto;
+  margin: 6px 0;
+  top: anchor(bottom);
+  left: anchor(left);
+  position-try-fallbacks: flip-block, flip-inline, flip-block flip-inline;
+  min-width: max(anchor-size(width), 200px);
+  max-height: min(420px, 70vh);
+  overflow-y: auto;
+  padding: 6px;
+  background: var(--surface-2);
+  border: 1px solid var(--trait);
+  border-radius: var(--rayon-m);
+  color: var(--texte);
+  box-shadow: var(--ombre-flottante);
+  opacity: 0;
+  transform: translateY(-4px);
+  transition:
+    opacity var(--duree-courte) var(--courbe),
+    transform var(--duree-courte) var(--courbe),
+    overlay var(--duree-courte) allow-discrete,
+    display var(--duree-courte) allow-discrete;
+}
+
+.menu.aDroite {
+  left: auto;
+  right: anchor(right);
+}
+
+.menu:popover-open {
+  opacity: 1;
+  transform: none;
+}
+
+@starting-style {
+  .menu:popover-open {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+.element {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  background: transparent;
+  border: 0;
+  border-radius: var(--rayon-s);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.element:hover,
+.element:focus-visible {
+  background: var(--surface-3);
+}
+
+.element:focus-visible {
+  outline-offset: -2px;
+  box-shadow: none;
+}
+
+.element[aria-checked='true'] {
+  font-weight: 500;
+}
+
+.danger {
+  color: var(--danger);
+}
+
+.coche {
+  width: 18px;
+  color: var(--accent);
+}
+
+.separateur {
+  height: 1px;
+  margin: 6px 4px;
+  background: var(--trait);
+}

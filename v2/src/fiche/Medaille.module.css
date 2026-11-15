@@ -1,0 +1,61 @@
+.medaille {
+  position: relative;
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  color: var(--texte);
+}
+
+.cadre {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.arret1 {
+  stop-color: var(--accent-3);
+}
+.arret2 {
+  stop-color: var(--accent);
+}
+.arret3 {
+  stop-color: var(--accent-2);
+}
+
+.fond {
+  fill: var(--survol);
+}
+
+.trait {
+  fill: none;
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+}
+
+/* Une médaille éteinte (succès verrouillé) : liseré gris, contenu en silhouette. */
+.medaille[data-eteinte] .trait {
+  stroke: var(--trait-clair);
+}
+
+.centre {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 64%;
+  height: 64%;
+}
+
+/* Une image au centre est taillée en rond. */
+.centre > img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.medaille[data-eteinte] .centre > img {
+  filter: grayscale(1) brightness(0.75);
+  opacity: 0.4;
+}

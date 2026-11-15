@@ -1,0 +1,60 @@
+/* Jaquette au format 2:3. La couleur dominante sert de fond pendant que l'image arrive. */
+.jaquette {
+  position: relative;
+  display: block;
+  aspect-ratio: 2 / 3;
+  overflow: hidden;
+  border-radius: var(--rayon-l);
+  background: var(--couleur-jaquette, var(--surface-1));
+}
+
+.image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.estompee {
+  opacity: 0.42;
+}
+
+/* Jeu non installé : l'image s'éteint sur un fond sombre, pas sur sa couleur dominante. */
+.jaquette:has(.estompee) {
+  background: var(--surface-1);
+}
+
+/* Jeu sans image (hors Steam, ou image indisponible) : on dessine la jaquette avec son titre. */
+.dessinee {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: var(--e2);
+  padding: 12% 9%;
+  /* Un léger dégradé donne du relief à l'aplat de couleur. */
+  background: linear-gradient(160deg, var(--reflet), var(--ombrage));
+  color: var(--texte);
+  container-type: inline-size;
+}
+
+.titre {
+  font-family: var(--police-titre);
+    font-weight: 400;
+  /* La taille suit la largeur de la jaquette : lisible en petit comme en grand. */
+  font-size: calc(clamp(11px, 10.5cqi, 22px) * var(--echelle-titre));
+  line-height: 1.22;
+  text-transform: none;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 5;
+  overflow: hidden;
+}
+
+.source {
+  font-size: clamp(10px, 7.5cqi, 13px);
+  line-height: 1.4;
+}

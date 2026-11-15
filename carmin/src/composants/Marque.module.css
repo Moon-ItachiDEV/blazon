@@ -1,0 +1,62 @@
+/* La marque : le sigle et le nom de l'application. Même dessin dans le rail, à l'ouverture et au premier lancement. */
+.marque {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--e3);
+}
+
+/* Le sigle : le blason violet-rose. `--taille-sigle` le grandit. */
+.sigle {
+  --t: var(--taille-sigle, 32px);
+  flex: none;
+  display: block;
+  width: var(--t);
+  height: var(--t);
+  filter: drop-shadow(0 4px 14px color-mix(in srgb, var(--violet) 45%, transparent));
+}
+
+.ecu {
+  fill: var(--fond-blason);
+}
+
+.reflet {
+  stroke: var(--lumiere);
+}
+
+.gemme {
+  fill: var(--gemme);
+}
+
+.rose {
+  stop-color: var(--accent-2);
+}
+
+.violet {
+  stop-color: var(--violet);
+}
+
+/* Les chevrons montent l'un après l'autre à l'apparition du sigle. */
+.chevron,
+.chevron2 {
+  animation: chevron var(--duree-longue) var(--courbe-ressort) backwards;
+}
+
+.chevron2 {
+  animation-delay: var(--pas-cascade);
+}
+
+@keyframes chevron {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
+.nom {
+  font-family: var(--police-titre);
+  font-stretch: var(--etirement-titre);
+  font-size: calc(18px * var(--echelle-titre));
+  line-height: 1;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}

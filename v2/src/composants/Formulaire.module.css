@@ -1,0 +1,164 @@
+/* Éléments de formulaire : ligne de réglage, interrupteur, champ de texte, choix parmi quelques valeurs. */
+.ligne {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e2) var(--e6);
+  min-height: 72px;
+  padding: var(--e4) 0;
+}
+
+.ligne + .ligne {
+  border-top: 1px solid var(--trait);
+}
+
+.ligneTexte {
+  flex: 1 1 280px;
+  min-width: 0;
+}
+
+.ligneNom {
+  font-weight: 500;
+}
+
+.ligneAide {
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--texte-3);
+  text-wrap: pretty;
+}
+
+.ligneCommande {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--e2);
+}
+
+/* Interrupteur : un vrai bouton `role="switch"`, 52 × 32, dans une cible de 48 px de haut. */
+.interrupteur {
+  position: relative;
+  flex: none;
+  width: 52px;
+  height: 32px;
+  margin: 8px 0;
+  padding: 0;
+  background: var(--surface-4);
+  border: 0;
+  border-radius: var(--rayon-pilule);
+  transition: background-color var(--duree) var(--courbe);
+}
+
+.interrupteur::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--texte-2);
+  box-shadow: 0 2px 6px var(--ombrage);
+  transition:
+    transform var(--duree-ressort) var(--courbe-ressort),
+    background-color var(--duree-courte) var(--courbe);
+}
+
+.interrupteur[aria-checked='true'] {
+  background: var(--accent-2);
+}
+
+.interrupteur[aria-checked='true']::after {
+  transform: translateX(20px);
+  background: var(--gelule);
+}
+
+.interrupteur:disabled {
+  opacity: 0.5;
+}
+
+.champ {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.champNom {
+  font-weight: 500;
+}
+
+.champAide {
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--texte-3);
+}
+
+.champErreur {
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--danger);
+}
+
+.saisie {
+  width: 100%;
+  height: var(--cible);
+  padding: 0 var(--e5);
+  background: var(--surface-2);
+  border: 1px solid transparent;
+  border-radius: var(--rayon-pilule);
+  color: var(--texte);
+}
+
+.saisie::placeholder {
+  color: var(--texte-3);
+}
+
+.saisie:focus-visible {
+  outline-offset: 2px;
+}
+
+.saisie[aria-invalid='true'] {
+  border-color: var(--danger);
+}
+
+.saisie:disabled {
+  opacity: 0.6;
+}
+
+/* Choix parmi deux à quatre valeurs, côte à côte. */
+.segments {
+  display: inline-flex;
+  flex-wrap: wrap;
+  padding: 4px;
+  background: var(--surface-2);
+  border: 0;
+  border-radius: var(--rayon-pilule);
+}
+
+.segment {
+  min-height: 40px;
+  padding: 0 var(--e4);
+  background: transparent;
+  border: 0;
+  border-radius: var(--rayon-pilule);
+  color: var(--texte-2);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  transition:
+    background-color var(--duree-courte) var(--courbe),
+    color var(--duree-courte) var(--courbe);
+}
+
+.segment:hover {
+  color: var(--texte);
+}
+
+.segment[aria-checked='true'] {
+  background: var(--gelule);
+  color: var(--sur-gelule);
+  font-weight: 500;
+}
